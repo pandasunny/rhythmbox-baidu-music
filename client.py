@@ -298,3 +298,93 @@ class Client(object):
         self.__save_cookie()
         self.islogin = False
         logging.info("Logout successed!")
+
+    def __get_cloud_info(self):
+        """ Get the information of baidu cloud music.
+
+        Returns:
+            A dict which has four items: cloud_surplus: the remaining quota;
+            cloud_total: the quota; cloud_used: the used quota; level: the
+            user's level, the possible values are 0, 1, 2.
+        """
+        url = TTPLAYER_URL + "/app/cloudMusic/spaceSongs.php?"
+        params = {"bduss": self.__bduss}
+        response = json.loads(self.__request(url, "GET", params))
+        logging.debug("cloud_total: %s; cloud_used: %s; cloud_surplus: %s",
+                response["cloud_total"], response["cloud_used"],
+                response["cloud_surplus"])
+        return response
+
+    def __get_collect_ids(self, size, start=0):
+        """ Get all the ids of collect list.
+
+        Returns:
+            A list include all song ids.
+            The response data is a dict like this:
+            {
+                "query": {
+                    "cloud_type": unknown,
+                    "type": "song",
+                    "start": the start number,
+                    "size": the size of ids,
+                    "_": timestamp
+                },
+                "errorCode": the error(22000 is normal),
+                "data": {
+                    "quota": the cloud quota,
+                    "songList": [{
+                        "id": the song id,
+                        "ctime": ctime
+                    }, ... ]
+                }
+            }
+        """
+        url = MUSICBOX_URL + "/data/mbox/collectlist?"
+        params = {
+            "cloud_type": 0,
+            "type": "song",
+            "start": start,
+            "size": size,
+            "_": int(time.time())
+            }
+        response = json.loads(self.__request(url, "GET", params))
+        if response["errorCode"] == 22000:
+            song_ids = [song["id"] for song in response["data"]["songList"]]
+            logging.debug("The total of song: %i", len(song_ids))
+            logging.debug("The song IDs: %s", str(song_ids))
+            return song_ids
+
+    def __get_song_info(self, song_ids):
+        """ Get basic information of songs whose id in the param 'song_ids'.
+
+        Returns:
+            A list includes the dicts of song. This list is a part of response.
+            The response data is a dict like this:
+            {
+                "errorCode": the error(22000 is normal),
+                "data": {
+                    "songList": [{
+                        "queryId": the song id,
+                        "albumId": the album id,
+                        "albumName": the album title,
+                        "artistId": the artist id,
+                        "artistName": the artist name,
+                        "songId": the song id,
+                        "songName": the song title,
+                        "songPicBig": the big cover,
+                        "songPicRadio": the radio cover,
+                        "songPicSmall": the small cover,
+                        "del status": 0, # unknown
+                        "relateStatus": 0, # unknown
+                        "resourceType": 0 #unknown
+                    }, ... ]
+                }
+            }
+        """
+        url = MUSICBOX_URL + "/data/music/songinfo"
+        params = {"songIds": ",".join(map(str, song_ids))}
+        response = json.loads(self.__request(url, "POST", params))
+        if response["errorCode"] == 22000:
+            result = response["data"]["songList"]
+            logging.debug("The song list: %s", str(result))
+            return result
