@@ -388,3 +388,49 @@ class Client(object):
             result = response["data"]["songList"]
             logging.debug("The song list: %s", str(result))
             return result
+
+    def get_song_links(self, song_ids, artist=[], title=[], link_type="stream"):
+        """ Get the informations about song's links.
+
+        Args:
+            song_ids: A list includes the song ids.
+            artist: A list includes the song's artists.
+            title: A list includes the song's titles.
+            link_type: A string about link which be got, stream or all.
+
+        Returns:
+            A dict is the response which is as follows:
+            {
+                albumName: the album title,
+                artist: the artist of song,
+                songID: the song id,
+                title: the song title,
+                URL: the URL which be shown,
+                fileslist: [{
+                    album_pic_small: the small cover,
+                    expiretimespan: unknown,
+                    fileID: the file id,
+                    format: the format of file such as mp3, flac and so on,
+                    hash: the hash of file,
+                    lrclink: the lyric url,
+                    rate: the rate of file,
+                    resource_type: unknown,
+                    size: the size of file,
+                    songLink: the url of song,
+                    songShowLink: the shown url of song,
+                    static: unknown,
+                    time: the time of song
+                }, ... ]
+            }
+        """
+        url = TTPLAYER_URL + "/app/link/getLinks.php?"
+        params = {
+            "songId": "@@".join(map(str, song_ids)),
+            "songArtist": "@@".join(artist),
+            "songTitle": "@@".join(title),
+            "linkType": {"stream": 0, "all": 1}.get(link_type),
+            "isLogin": int(self.islogin),
+            "clientVer": self.CLIENTVER
+            }
+        response = json.loads(self.__request(url, "GET", params))
+        return response
