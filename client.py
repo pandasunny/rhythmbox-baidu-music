@@ -434,3 +434,68 @@ class Client(object):
             }
         response = json.loads(self.__request(url, "GET", params))
         return response
+
+    def search(self, keyword, page=1):
+        """ Search songs with keywords.
+
+        Args:
+            keyword: the keyword with music.
+            page: the search page number.
+
+        Returns:
+            A dict about songs and others:
+            {
+                count: the count of songs,
+                page: the current page number,
+                num: the number of songs per page,
+                song: {
+                    id: the song id,
+                    url: the song shown url,
+                    artist: the artist of song,
+                    title: the title of song,
+                    album: the album of song,
+                    num: unknown
+                    }
+            }
+        """
+        url = TTPLAYER_URL + "/app/search/searchList.php?"
+        params = {
+                "qword": keyword,
+                "page": page
+                }
+        response = self.__request(url, "GET", params, {})
+        songs = []  # the songs list
+
+        # Get all songs from this search page with re. The example page is in
+        # url(http://qianqianmini.baidu.com/app/search/searchList.php?qword=).
+        reSong = re.compile(r"<td class='uName'><[^>]+?"
+                r"title=\"(?P<album>[^\"]*)\">.+\n"
+                r".+?addSong\("
+                r"'(?P<id>\d*)','(?P<url>[^']*)','(?P<artist>[^']*)',"
+                r"'(?P<title>[^']*)','(?P<num>\d*)'\)\"", re.MULTILINE)
+        for song in reSong.finditer(response):
+            songs.append({
+                "id": song.group("id"),
+                "url": song.group("url"),
+                "artist": song.group("artist"),
+                "title": song.group("title"),
+                "album": song.group("album"),
+                "num": song.group("num")
+                })
+
+        # Get the page information.
+        rePage = re.compile(r"pageLink\([^']+'[^']*'\)\),\s*"
+                r"(?P<count>\d+),\s*"
+                r"(?P<page>\d+),\s*"
+                r"(?P<num>\d+)")
+        page = rePage.search(response)
+        if page:
+            result = {
+                    "count": page.group("count"),
+                    "page": page.group("page"),
+                    "num": page.group("num"),
+                    "songs": songs
+                    }
+        else:
+            result = {}
+        return result
