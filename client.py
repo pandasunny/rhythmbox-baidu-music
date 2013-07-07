@@ -499,3 +499,48 @@ class Client(object):
         else:
             result = {}
         return result
+
+    def add_favorite_songs(self, ids):
+        """ Add some songs from baidu cloud.
+
+        Args:
+            ids: A list includes all ids of songs.
+
+        Returns:
+            A boolean "False" or a list includes the dicts of song.
+        """
+        url = MUSICBOX_URL + "/data/user/collect"
+        params = {
+            "ids": ",".join(map(str, ids)),
+            "type": "song",
+            "cloud_type": 0
+            }
+        headers = {"Referer": "http://play.baidu.com/"}
+
+        response = json.loads(self.__request(url, "POST", params, headers))
+        if response["errorCode"] == 22000:
+            ids = response["data"]["collectIds"]
+            logging.debug("The successful collection of songs: %s", str(ids))
+            return self.__get_song_info(ids)
+        else:
+            return False
+
+    def remove_favorite_songs(self, ids):
+        """ Remove some songs from baidu cloud.
+
+        Args:
+            ids: A list includes all ids of songs.
+
+        Returns:
+            A boolean.
+        """
+        url = MUSICBOX_URL + "/data/user/deletecollectsong"
+        params = {
+            "songIds": ",".join(map(str, ids)),
+            "type": "song"
+            }
+
+        response = json.loads(self.__request(url, "POST", params))
+        result = True if response["errorCode"] == 22000 else False
+        logging.debug("The deleted collection of songs: %s", str(ids))
+        return result
