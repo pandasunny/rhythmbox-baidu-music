@@ -29,6 +29,8 @@ PASSPORT_URL = "https://passport.baidu.com"
 CROSSDOMAIN_URL = "http://user.hao123.com/static/crossdomain.php?"
 TTPLAYER_URL = "http://qianqianmini.baidu.com"
 MUSICBOX_URL = "http://play.baidu.com"
+REFERER_URL = "http://qianqianmini.baidu.com/app/passport/passport_phoenix.html"
+CROSSDOMAIN_REFERER_URL = "http://qianqianmini.baidu.com/app/passport/index.htm"
 
 class InvalidTokenError(Exception):pass
 class InvalidUsernameError(Exception): pass
@@ -57,6 +59,8 @@ class Client(object):
         self.__hao123Param = ""     # the string "BDU" of cross domain
         self.islogin = False        # a boolean of login
 
+        self.__cloud = {}           # the cloud information dict
+
         if debug:
             logging.basicConfig(format="%(asctime)s - %(levelname)s - \
                     %(message)s", level=logging.DEBUG)
@@ -82,9 +86,14 @@ class Client(object):
                 ("Accept", "*/*"),
                 ("Accept-Language", "zh-CN"),
                 ("Accept-Encoding", "gzip, deflate"),
-                ("User-Agent", "Mozilla/5.0 (X11; Linux i686) \
-                        AppleWebKit/537.36 (KHTML, like Gecko) \
-                        Chrome/29.0.1547.0 Safari/537.36")
+                ("User-Agent", "Mozilla/4.0 (compatible; MSIE 7.0; \
+                        Windows NT 6.1; Trident/6.0; SLCC2; \
+                        .NET CLR 2.0.50727; .NET CLR 3.5.30729; \
+                        .NET CLR 3.0.30729; Media Center PC 6.0; \
+                        .NET4.0C; .NET4.0E)")
+                #("User-Agent", "Mozilla/5.0 (X11; Linux i686) \
+                        #AppleWebKit/537.36 (KHTML, like Gecko) \
+                        #Chrome/29.0.1547.0 Safari/537.36")
                 ]
         urllib2.install_opener(opener)
 
@@ -157,7 +166,14 @@ class Client(object):
 
     def __login_get_id(self):
         """ Get the cookie 'BAIDUID' """
-        self.__request(PASSPORT_URL, "HEAD")
+        timestamp = int(time.time())
+        url = PASSPORT_URL + "/passApi/js/wrapper.js?"
+        params = {
+                "cdnversion": timestamp,
+                "_": timestamp
+                }
+        headers = {"Referer": REFERER_URL}
+        self.__request(url, "HEAD", params, headers)
         for cookie in self.__cj:
             if (cookie.name == 'BAIDUID') and (cookie.domain == '.baidu.com'):
                 logging.debug("The cookie 'BAIDUID': " + cookie.value)
@@ -189,7 +205,8 @@ class Client(object):
             "callback": ""
             }
         url = PASSPORT_URL + "/v2/api/?getapi&"
-        response = json.loads(self.__request(url, "GET", params))
+        headers = {"Referer": REFERER_URL}
+        response = json.loads(self.__request(url, "GET", params, headers))
 
         if response["errInfo"]["no"] == "0":
             self.__token = response["data"]["token"]
@@ -199,15 +216,39 @@ class Client(object):
         else:
             raise TokenError("Get token faild.")
 
-    def __login_perform(self, username, password, remember):
+    def __login_check(self, username):
+        #callback = self.__getCallbackString()
+        callback = ""
+        url = PASSPORT_URL + "/v2/api/?logincheck&"
+        params = {
+            "token": self.__token,
+            "tpl": self.TPL,
+            "apiver": self.APIVER,
+            "tt": int(time.time()),
+            "username": username,
+            "isphone": "false",
+            "callback": callback
+            }
+        headers = {"Referer": CROSSDOMAIN_REFERER_URL}
+        response = self.__request(url, "GET", params, headers)
+        self.__codestring = response["data"]["codeString"]
+
+    def __login_captchaservice(self):
+        url = PASSPORT_URL + "/cgi-bin/genimage?" + self.__codestring
+        response = self.__request(url, "GET")
+        return response
+
+    def __login(self, username, password, remember, verifycode=None):
         """ Post the username and password for login.
 
         Get html data and find two variables: err_no and hao123Param in
         javascript code.
         The 'err_no' string has three values:
+            err_no = 0: login successed
             err_no = 2: username invalid
             err_no = 4: username or password invalid
-            err_no = 0: login successed
+            err_no = 6: captcha invalid
+            err_no = 257: use captcha
 
         Args:
             username: The user's login name
@@ -237,14 +278,15 @@ class Client(object):
             "u": "",
             "username": username,
             "password": password,
-            "verifycode": "",
+            "verifycode": verifycode,
             "ppui_logintime": random.randint(1000, 99999),
             "callback": ""
             }
         if remember:
             params["mem_pass"] = "on"
+        headers = {"Referer": REFERER_URL}
 
-        response = self.__request(url, "POST", params)
+        response = self.__request(url, "POST", params, headers)
 
         errno = response[response.find("err_no=")+len("err_no=")]
 
@@ -266,14 +308,15 @@ class Client(object):
             "bdu": self.__hao123Param,
             "t": int(time.time())
             }
-        self.__request(CROSSDOMAIN_URL, "HEAD", params)
+        headers = {"Referer": CROSSDOMAIN_REFERER_URL}
+        self.__request(CROSSDOMAIN_URL, "HEAD", params, headers)
         for cookie in self.__cj:
             if (cookie.name == 'BDUSS') and (cookie.domain == '.baidu.com'):
                 logging.info("Cross domain login successed")
                 self.__bduss = cookie.value
                 logging.debug("The cookie 'BDUSS': " + cookie.value)
 
-    def login(self, username, password, remember=True):
+    def login(self, username, password, remember=True, verifycode=None):
         """ Login baidu music.
 
         Args:
@@ -287,10 +330,10 @@ class Client(object):
         if not self.islogin:
             self.__login_get_id()
             self.__login_get_token()
-            self.__login_perform(username, password, remember)
+            self.__login(username, password, remember)
             self.__login_cross_domain()
             self.islogin = True
-        return self.islogin
+        return int(self.islogin)
 
     def logout(self):
         """ Logout baidu music """
@@ -298,6 +341,21 @@ class Client(object):
         self.__save_cookie()
         self.islogin = False
         logging.info("Logout successed!")
+
+    @property
+    def cloud(self):
+        """ The property has all informations about music cloud.
+
+        Returns:
+            A dict includes all informations about cloud. This dict has five
+            items, includes the returns from self.__get_cloud_info() and
+            self.__get_song_info().
+        """
+        if self.islogin and not self.__cloud:
+            self.__cloud.update(self.__get_cloud_info())
+            song_ids = self.__get_collect_ids(self.__cloud["cloud_used"])
+            self.__cloud["collect_list"] = self.__get_song_info(song_ids)
+        return self.__cloud
 
     def __get_cloud_info(self):
         """ Get the information of baidu cloud music.
@@ -544,3 +602,4 @@ class Client(object):
         result = True if response["errorCode"] == 22000 else False
         logging.debug("The deleted collection of songs: %s", str(ids))
         return result
+
