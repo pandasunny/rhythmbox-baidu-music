@@ -10,6 +10,10 @@ class BaiduMusicSource(RB.BrowserSource):
         self.client = None
         self.__activated = False
 
+        self.__albumart = {}
+        self.__art_store = RB.ExtDB(name="album-art")
+        self.__req_id = self.__art_store.connect("request", self.__album_art_requested)
+
     def do_selected(self):
         if not self.__activated:
             entry_view = self.get_entry_view()
@@ -56,6 +60,17 @@ class BaiduMusicSource(RB.BrowserSource):
     #def do_delete_thyself(self):
         #RB.BrowserSource.delete_thyself()
 
+    def __album_art_requested(self, store, key, last_time):
+
+        album = key.get_field("album").decode("utf-8")
+        artist = key.get_field("artist").decode("utf-8")
+        uri = self.__albumart[artist+album]
+        print('album art uri: %s' % uri)
+        if uri:
+            storekey = RB.ExtDBKey.create_storage("album", album)
+            storekey.add_field("artist", artist)
+            store.store_uri(storekey, RB.ExtDBSourceType.SEARCH, uri)
+
     def __add_songs(self, songs):
         db = self.props.shell.props.db
         for song in songs:
@@ -75,6 +90,15 @@ class BaiduMusicSource(RB.BrowserSource):
                     song["albumName"].encode("utf-8")
                     )
             self.props.query_model.add_entry(entry, -1)
+
+            if song["songPicBig"]:
+                albumart = song["songPicBig"]
+            elif song["songPicRadio"]:
+                albumart = song["songPicRadio"]
+            else:
+                albumart = song["songPicSmall"]
+            self.__albumart[song["artistName"]+song["albumName"]] = albumart
+
         db.commit()
 
     def load(self):
