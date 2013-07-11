@@ -2,6 +2,7 @@
 from gi.repository import GObject
 from gi.repository import RB
 
+
 class BaiduMusicSource(RB.BrowserSource):
 
     def __init__(self):
@@ -57,8 +58,11 @@ class BaiduMusicSource(RB.BrowserSource):
             for entry in entries:
                 self.props.query_model.remove_entry(entry)
 
-    #def do_delete_thyself(self):
-        #RB.BrowserSource.delete_thyself()
+    def do_delete_thyself(self):
+        self.__art_store.disconnect(self.__req_id)
+        self.__req_id = None
+        self.__art_store = None
+        RB.BrowserSource.delete_thyself(self)
 
     def __album_art_requested(self, store, key, last_time):
 
