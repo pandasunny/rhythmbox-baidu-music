@@ -10,8 +10,6 @@ from gi.repository import GdkPixbuf
 from client import Client
 from source import BaiduMusicSource
 
-username = ""
-password = ""
 cookie = os.environ['HOME']+'/baidumusic.cookie'
 
 class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
@@ -23,6 +21,8 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
 
     def do_activate(self):
         print "Baidu Music Plugin activated."
+
+        self.settings = Gio.Settings("org.gnome.rhythmbox.plugins.baidumusic")
 
         shell = self.object
         self.db = shell.props.db
@@ -46,7 +46,7 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
                 entry_type=self.entry_type,
                 query_model=self.query_model,
                 #pixbuf=icon,
-                #settings=settings,
+                settings=self.settings.get_child("source"),
                 #toolbar_path="/CloudToolbar",
                 )
         shell.append_display_page(self.source,
@@ -55,6 +55,8 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
 
         # init the api class
         self.client = Client(cookie, debug=False)
+        username = self.settings.get_string("username")
+        password = self.settings.get_string("password")
         if username and password:
             self.client.login(username, password)
 
@@ -77,6 +79,7 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
         self.source.delete_thyself()
         self.source = None
 
+        self.settings = None
         self.client = None
 
 class BaiduMusicEntryType(RB.RhythmDBEntryType):

@@ -1,0 +1,15 @@
+<schemalist>
+  <schema id="org.gnome.rhythmbox.plugins.baidumusic" path="/org/gnome/rhythmbox/plugins/baidumusic/">
+    <key name="username" type="s">
+      <default>''</default>
+      <summary>Username</summary>
+      <description>The username of baidu music account.</description>
+    </key>
+    <key name="password" type="s">
+      <default>''</default>
+      <summary>Password</summary>
+      <description>The password of baidu music account.</description>
+    </key>
+    <child name="source" schema="org.gnome.rhythmbox.source"/>
+  </schema>
+</schemalist>
