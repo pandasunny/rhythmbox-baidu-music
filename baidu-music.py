@@ -18,7 +18,7 @@ POPUP_UI = """
     <toolitem name="BaiduMusicLogin" action="BaiduMusicLoginAction"/>
     <toolitem name="Browse" action="ViewBrowser"/>
     <toolitem name="BaiduMusicSearch" action="BaiduMusicSearchAction"/>
-    <toolitem name="BaiduMusicRefresh" action="BaiduMusicRefreshAction"/>
+    <toolitem name="BaiduMusicSync" action="BaiduMusicSyncAction"/>
   </toolbar>
 </ui>
 """
@@ -148,7 +148,38 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
         pass
 
     def __login_action(self, widget):
-        pass
+        if self.client.islogin:
+            # logout function
+            dialog = Gtk.MessageDialog(None, 0, Gtk.MessageType.QUESTION,
+                Gtk.ButtonsType.OK_CANCEL, _("Logout confirm"))
+            dialog.format_secondary_text(_("Are you sure you want to logout?"))
+            response = dialog.run()
+            if response == Gtk.ResponseType.OK:
+                self.client.logout()
+                if not self.client.islogin:
+                    self.settings["username"] = ""
+                    self.settings["password"] = ""
+                    self.source.clear()
+                    widget.set_label(_("Login"))
+                    widget.set_tooltip(_("Log in the baidu music."))
+            dialog.destroy()
+        else:
+            # login function
+            dialog = LoginDialog()
+            response = dialog.run()
+            if response == Gtk.ResponseType.OK:
+                username = dialog.username_entry.get_text()
+                password = dialog.password_entry.get_text()
+                try:
+                    self.client.login(username, password)
+                    self.settings["username"] = username
+                    self.settings["password"] = password
+                    dialog.destroy()
+                    self.source.load()
+                    widget.set_label(_("Logout"))
+                    widget.set_tooltip(_("Log out the baidu music."))
+                except Exception as e:
+                    print e
 
     def __sync_data(self, widget):
         pass
@@ -179,3 +210,45 @@ class BaiduMusicEntryType(RB.RhythmDBEntryType):
 
     def do_can_sync_metadata(self, entry):
         return True
+
+class LoginDialog(Gtk.Dialog):
+    def __init__(self):
+        Gtk.Dialog.__init__(self,
+            _("Login"), None, 0, (
+                Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
+                Gtk.STOCK_OK, Gtk.ResponseType.OK,
+        ))
+
+        # username and password input
+        username_label = Gtk.Label(_("Username:"))
+        password_label = Gtk.Label(_("Password:"))
+        self.username_entry = Gtk.Entry()
+        self.password_entry = Gtk.Entry()
+        self.password_entry.set_visibility(False)
+
+        # baidu url
+        signup_url = Gtk.Label()
+        signup_url.set_markup("<a href='https://passport.baidu.com/v2/?reg'>"
+                + _("sign up") + "</a>")
+        signup_url.set_halign(Gtk.Align.START)
+
+        forgotpassword_url = Gtk.Label()
+        forgotpassword_url.set_markup(
+                "<a href='https://passport.baidu.com/?getpass_index'>"
+                + _("forgot password?") + "</a>")
+
+        grid = Gtk.Grid()
+        grid.set_column_spacing(5)
+        grid.set_border_width(5)
+
+        grid.add(username_label)
+        grid.attach(self.username_entry, 1, 0, 2, 1)
+        grid.attach(password_label, 0, 1, 1, 1)
+        grid.attach(self.password_entry, 1, 1, 2, 1)
+
+        grid.attach(signup_url, 3, 0, 1, 1)
+        grid.attach(forgotpassword_url, 3, 1, 1, 1)
+
+        box = self.get_content_area()
+        box.add(grid)
+        self.show_all()
