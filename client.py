@@ -29,8 +29,8 @@ PASSPORT_URL = "https://passport.baidu.com"
 CROSSDOMAIN_URL = "http://user.hao123.com/static/crossdomain.php?"
 TTPLAYER_URL = "http://qianqianmini.baidu.com"
 MUSICBOX_URL = "http://play.baidu.com"
-REFERER_URL = "http://qianqianmini.baidu.com/app/passport/passport_phoenix.html"
-CROSSDOMAIN_REFERER_URL = "http://qianqianmini.baidu.com/app/passport/index.htm"
+#REFERER_URL = "http://qianqianmini.baidu.com/app/passport/passport_phoenix.html"
+#CROSSDOMAIN_REFERER_URL = "http://qianqianmini.baidu.com/app/passport/index.htm"
 
 class InvalidTokenError(Exception):pass
 class InvalidUsernameError(Exception): pass
@@ -172,8 +172,8 @@ class Client(object):
                 "cdnversion": timestamp,
                 "_": timestamp
                 }
-        headers = {"Referer": REFERER_URL}
-        self.__request(url, "HEAD", params, headers)
+        #headers = {"Referer": REFERER_URL}
+        self.__request(url, "HEAD", params)
         for cookie in self.__cj:
             if (cookie.name == 'BAIDUID') and (cookie.domain == '.baidu.com'):
                 logging.debug("The cookie 'BAIDUID': " + cookie.value)
@@ -205,8 +205,8 @@ class Client(object):
             "callback": ""
             }
         url = PASSPORT_URL + "/v2/api/?getapi&"
-        headers = {"Referer": REFERER_URL}
-        response = json.loads(self.__request(url, "GET", params, headers))
+        #headers = {"Referer": REFERER_URL}
+        response = json.loads(self.__request(url, "GET", params))
 
         if response["errInfo"]["no"] == "0":
             self.__token = response["data"]["token"]
@@ -216,7 +216,7 @@ class Client(object):
         else:
             raise TokenError("Get token faild.")
 
-    def __login_check(self, username):
+    def login_check(self, username):
         #callback = self.__getCallbackString()
         callback = ""
         url = PASSPORT_URL + "/v2/api/?logincheck&"
@@ -229,11 +229,12 @@ class Client(object):
             "isphone": "false",
             "callback": callback
             }
-        headers = {"Referer": CROSSDOMAIN_REFERER_URL}
-        response = self.__request(url, "GET", params, headers)
+        #headers = {"Referer": CROSSDOMAIN_REFERER_URL}
+        response = self.__request(url, "GET", params)
         self.__codestring = response["data"]["codeString"]
+        return bool(self.__codestring)
 
-    def __login_captchaservice(self):
+    def get_captcha(self):
         url = PASSPORT_URL + "/cgi-bin/genimage?" + self.__codestring
         response = self.__request(url, "GET")
         return response
@@ -284,9 +285,9 @@ class Client(object):
             }
         if remember:
             params["mem_pass"] = "on"
-        headers = {"Referer": REFERER_URL}
+        #headers = {"Referer": REFERER_URL}
 
-        response = self.__request(url, "POST", params, headers)
+        response = self.__request(url, "POST", params)
 
         errno = response[response.find("err_no=")+len("err_no=")]
 
@@ -308,8 +309,8 @@ class Client(object):
             "bdu": self.__hao123Param,
             "t": int(time.time())
             }
-        headers = {"Referer": CROSSDOMAIN_REFERER_URL}
-        self.__request(CROSSDOMAIN_URL, "HEAD", params, headers)
+        #headers = {"Referer": CROSSDOMAIN_REFERER_URL}
+        self.__request(CROSSDOMAIN_URL, "HEAD", params)
         for cookie in self.__cj:
             if (cookie.name == 'BDUSS') and (cookie.domain == '.baidu.com'):
                 logging.info("Cross domain login successed")
