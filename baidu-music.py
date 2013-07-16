@@ -34,7 +34,7 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
     def do_activate(self):
         print "Baidu Music Plugin activated."
 
-        self.settings = Gio.Settings("org.gnome.rhythmbox.plugins.baidumusic")
+        self.settings = Gio.Settings("org.gnome.rhythmbox.plugins.baidu-music")
 
         shell = self.object
         self.db = shell.props.db

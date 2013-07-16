@@ -1,5 +1,5 @@
 <schemalist>
-  <schema id="org.gnome.rhythmbox.plugins.baidumusic" path="/org/gnome/rhythmbox/plugins/baidumusic/">
+  <schema id="org.gnome.rhythmbox.plugins.baidu-music" path="/org/gnome/rhythmbox/plugins/baidu-music/">
     <key name="username" type="s">
       <default>''</default>
       <summary>Username</summary>
