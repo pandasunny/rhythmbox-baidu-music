@@ -10,15 +10,13 @@ from gi.repository import GdkPixbuf
 from client import Client
 from source import BaiduMusicSource
 
-cookie = os.environ['HOME']+'/baidumusic.cookie'
-
 POPUP_UI = """
 <ui>
   <toolbar name="SourceToolbar">
     <toolitem name="BaiduMusicLogin" action="BaiduMusicLoginAction"/>
     <toolitem name="Browse" action="ViewBrowser"/>
-    <toolitem name="BaiduMusicSearch" action="BaiduMusicSearchAction"/>
-    <toolitem name="BaiduMusicSync" action="BaiduMusicSyncAction"/>
+    <!-- <toolitem name="BaiduMusicSearch" action="BaiduMusicSearchAction"/> -->
+    <!-- <toolitem name="BaiduMusicSync" action="BaiduMusicSyncAction"/> -->
   </toolbar>
 </ui>
 """
@@ -66,11 +64,16 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
         shell.register_entry_type_for_source(self.source, self.entry_type)
 
         # init the api class
+        cookie = os.path.join(self.plugin_info.get_data_dir(), "cookie")
         self.client = Client(cookie, debug=False)
         username = self.settings.get_string("username")
         password = self.settings.get_string("password")
-        if username and password:
-            self.client.login(username, password)
+        if username and password and not self.client.islogin:
+            try:
+                self.client.login(username, password)
+            except Exception, e:
+                self.settings["username"] = ""
+                self.settings["password"] = ""
 
         self.source.client = self.client
         self.entry_type.client = self.client
@@ -182,6 +185,9 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
                     print e
 
     def __sync_data(self, widget):
+        #if self.client.islogin:
+            #self.source.clear()
+            #self.source.load()
         pass
 
 
@@ -206,10 +212,16 @@ class BaiduMusicEntryType(RB.RhythmDBEntryType):
         db.entry_set(entry, RB.RhythmDBPropType.DURATION, song["time"])
         db.entry_set(entry, RB.RhythmDBPropType.FILE_SIZE, song["size"])
         db.entry_set(entry, RB.RhythmDBPropType.BITRATE, song["rate"])
+        #print "song title: %s" % songinfo[0]["title"].encode("utf-8")
+        #print "song link: %s" % song["songLink"]
+        #print "song lrc: %s" % song["lrcLink"]
         return song["songLink"]
 
     def do_can_sync_metadata(self, entry):
         return True
+
+    def do_sync_metadata(self, entry, changes):
+        return
 
 class LoginDialog(Gtk.Dialog):
     def __init__(self):

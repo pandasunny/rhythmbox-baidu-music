@@ -35,6 +35,8 @@ MUSICBOX_URL = "http://play.baidu.com"
 class InvalidTokenError(Exception):pass
 class InvalidUsernameError(Exception): pass
 class InvalidLoginError(Exception): pass
+class InvalidVerifyCodeError(Exception): pass
+class MissVerifyCodeError(Exception): pass
 
 
 class Client(object):
@@ -56,7 +58,7 @@ class Client(object):
         self.__bduss = ""           # the string "BDUSS" of cookie
         self.__token = ""           # login token
         self.__codestring = ""      # login codestring
-        self.__hao123Param = ""     # the string "BDU" of cross domain
+        self.__bdu = ""     # the string "BDU" of cross domain
         self.islogin = False        # a boolean of login
 
         self.__cloud = {}           # the cloud information dict
@@ -131,10 +133,12 @@ class Client(object):
             response = urllib2.urlopen(request)
         except urllib2.HTTPError as e:
             print "The server couldn't fulfill the request."
-            print "Error code: ", e.code
+            print url
+            print "Error code: " +  e.code
         except urllib2.URLError as e:
             print "We failed to reach a server."
-            print "Reason: ", e.reason
+            print url
+            print "Reason: " + e.reason
         else:
             self.__save_cookie()
             result = self.unzip(response) if method != "HEAD" else True
@@ -239,7 +243,7 @@ class Client(object):
         response = self.__request(url, "GET")
         return response
 
-    def __login(self, username, password, remember, verifycode=None):
+    def __login(self, username, password, verifycode=None, remember=True):
         """ Post the username and password for login.
 
         Get html data and find two variables: err_no and hao123Param in
@@ -254,12 +258,15 @@ class Client(object):
         Args:
             username: The user's login name
             password: The user's password
+            verifycode: The verify code from image
             remember: A boolean if remembered the username and the password
 
         Raises:
             InvalidUsernameError: An error occurred post the invalid username.
             InvalidLoginError: An error occurred post the invalid username or
                 the invalid password.
+            InvalidVerifyCodeError: An error occurred input the invalid verifycode.
+            MissVerifyCodeError: An error occurred do not input the verifycode.
 
         TODO:
             1.use the phone number to login the baidu music
@@ -289,24 +296,29 @@ class Client(object):
 
         response = self.__request(url, "POST", params)
 
-        errno = response[response.find("err_no=")+len("err_no=")]
+        errno = re.search("err_no=(\d+)", response).group(1)
 
         if errno == "0":
             logging.info("Login successed!")
-            pos = response.rfind("hao123Param=")
-            self.__hao123Param = response[pos+len("hao123Param="):pos+len("hao123Param=")+256]
-            logging.debug("The cross domain param 'bdu': " + self.__hao123Param)
+            self.__bdu = re.search("hao123Param=(\w+)", response).group(1)
+            logging.debug("The cross domain param 'bdu': " + self.__bdu)
         elif errno == "2":
             logging.error("The username is invalid.")
             raise InvalidUsernameError()
         elif errno == "4":
             logging.error("The username or password is invalid.")
             raise InvalidLoginError()
+        elif errno == "6":
+            logging.error("The captcha is invalid.")
+            raise InvalidVerifyCodeError()
+        elif errno == "257":
+            logging.error("Please input the captcha.")
+            raise MissVerifyCodeError()
 
     def __login_cross_domain(self):
         """ Cross domain login """
         params = {
-            "bdu": self.__hao123Param,
+            "bdu": self.__bdu,
             "t": int(time.time())
             }
         #headers = {"Referer": CROSSDOMAIN_REFERER_URL}
@@ -317,12 +329,13 @@ class Client(object):
                 self.__bduss = cookie.value
                 logging.debug("The cookie 'BDUSS': " + cookie.value)
 
-    def login(self, username, password, remember=True, verifycode=None):
+    def login(self, username, password, verifycode=None, remember=True):
         """ Login baidu music.
 
         Args:
             username: The user's login name
             password: The user's password
+            verifycode: The verify code from image
             remember: A boolean if remembered the username and the password
 
         Returns:
