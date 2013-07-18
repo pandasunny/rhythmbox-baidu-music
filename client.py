@@ -61,7 +61,8 @@ class Client(object):
         self.__bdu = ""     # the string "BDU" of cross domain
         self.islogin = False        # a boolean of login
 
-        self.__cloud = {}           # the cloud information dict
+        #self.__cloud = {}           # the cloud information dict
+        self.total = 0              # the count of songs in collect list
 
         if debug:
             logging.basicConfig(format="%(asctime)s - %(levelname)s - \
@@ -356,20 +357,20 @@ class Client(object):
         self.islogin = False
         logging.info("Logout successed!")
 
-    @property
-    def cloud(self):
-        """ The property has all informations about music cloud.
+    #@property
+    #def cloud(self):
+        #""" The property has all informations about music cloud.
 
-        Returns:
-            A dict includes all informations about cloud. This dict has five
-            items, includes the returns from self.__get_cloud_info() and
-            self.__get_song_info().
-        """
-        if self.islogin and not self.__cloud:
-            self.__cloud.update(self.__get_cloud_info())
-            song_ids = self.__get_collect_ids(self.__cloud["cloud_used"])
-            self.__cloud["collect_list"] = self.__get_song_info(song_ids)
-        return self.__cloud
+        #Returns:
+            #A dict includes all informations about cloud. This dict has five
+            #items, includes the returns from self.__get_cloud_info() and
+            #self.__get_song_info().
+        #"""
+        #if self.islogin and not self.__cloud:
+            #self.__cloud.update(self.__get_cloud_info())
+            #song_ids = self.__get_collect_ids(self.__cloud["cloud_used"])
+            #self.__cloud["collect_list"] = self.__get_song_info(song_ids)
+        #return self.__cloud
 
     def __get_cloud_info(self):
         """ Get the information of baidu cloud music.
@@ -387,7 +388,7 @@ class Client(object):
                 response["cloud_surplus"])
         return response
 
-    def __get_collect_ids(self, size, start=0):
+    def get_collect_ids(self, size, start=0):
         """ Get all the ids of collect list.
 
         Returns:
@@ -424,9 +425,10 @@ class Client(object):
             song_ids = [song["id"] for song in response["data"]["songList"]]
             logging.debug("The total of song: %i", len(song_ids))
             logging.debug("The song IDs: %s", str(song_ids))
+            self.total = int(response["data"]["total"])
             return song_ids
 
-    def __get_song_info(self, song_ids):
+    def get_song_info(self, song_ids):
         """ Get basic information of songs whose id in the param 'song_ids'.
 
         Returns:
