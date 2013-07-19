@@ -16,7 +16,8 @@ POPUP_UI = """
     <toolitem name="BaiduMusicLogin" action="BaiduMusicLoginAction"/>
     <toolitem name="Browse" action="ViewBrowser"/>
     <!-- <toolitem name="BaiduMusicSearch" action="BaiduMusicSearchAction"/> -->
-    <!-- <toolitem name="BaiduMusicSync" action="BaiduMusicSyncAction"/> -->
+    <toolitem name="BaiduMusicSync" action="BaiduMusicSyncAction"/>
+    <!-- <toolitem name="BaiduMusicTest" action="BaiduMusicTestAction"/> -->
   </toolbar>
 </ui>
 """
@@ -115,7 +116,7 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
                 tooltip=_("Synchronize the collect data."),
                 stock_id=None
                 )
-        action.connect("activate", self.__sync_data)
+        action.connect("activate", lambda a: shell.props.selected_page.sync())
         self.action_group.add_action(action)
 
         manager.insert_action_group(self.action_group, 0)
@@ -136,13 +137,13 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
         #self.db.entry_delete_by_type(self.entry_type)
         #self.db.commit()
 
-        self.db = None
-        self.query_model = None
-        self.entry_type = None
-
         # delete the source
         self.source.delete_thyself()
         self.source = None
+
+        self.db = None
+        self.query_model = None
+        self.entry_type = None
 
         self.settings = None
         self.client = None
@@ -183,12 +184,6 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
                     widget.set_tooltip(_("Log out the baidu music."))
                 except Exception as e:
                     print e
-
-    def __sync_data(self, widget):
-        #if self.client.islogin:
-            #self.source.clear()
-            #self.source.load()
-        pass
 
 
 class BaiduMusicEntryType(RB.RhythmDBEntryType):
