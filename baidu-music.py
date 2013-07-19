@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
+
 import rb
 from gi.repository import GObject
 from gi.repository import Gio
@@ -7,8 +8,13 @@ from gi.repository import RB
 from gi.repository import Peas
 from gi.repository import Gtk
 from gi.repository import GdkPixbuf
+
 from client import Client
 from source import BaiduMusicSource
+
+import gettext
+#gettext.install("rhythmbox", RB.locale_dir())
+#gettext.translation("messages", "./locale/", languages=["zh_CN"]).install(True)
 
 POPUP_UI = """
 <ui>
@@ -119,6 +125,15 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
         action.connect("activate", lambda a: shell.props.selected_page.sync())
         self.action_group.add_action(action)
 
+        action = Gtk.Action(
+                name="BaiduMusicTestAction",
+                label=_("Test"),
+                tooltip=_("Test"),
+                stock_id=None
+                )
+        action.connect("activate", lambda a: shell.props.selected_page.test())
+        self.action_group.add_action(action)
+
         manager.insert_action_group(self.action_group, 0)
         manager.ensure_update()
 
@@ -218,6 +233,7 @@ class BaiduMusicEntryType(RB.RhythmDBEntryType):
     def do_sync_metadata(self, entry, changes):
         return
 
+
 class LoginDialog(Gtk.Dialog):
     def __init__(self):
         Gtk.Dialog.__init__(self,
@@ -242,7 +258,7 @@ class LoginDialog(Gtk.Dialog):
         forgotpassword_url = Gtk.Label()
         forgotpassword_url.set_markup(
                 "<a href='https://passport.baidu.com/?getpass_index'>"
-                + _("forgot password?") + "</a>")
+                + _("forgot?") + "</a>")
 
         grid = Gtk.Grid()
         grid.set_column_spacing(5)

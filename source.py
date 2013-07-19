@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from gi.repository import GObject
 from gi.repository import GLib
+from gi.repository import Gdk
 from gi.repository import RB
 
 
@@ -23,17 +24,23 @@ class BaiduMusicSource(RB.BrowserSource):
 
     def do_selected(self):
         if not self.__activated:
+            # init query model and db
             self.__query_model = self.props.query_model
             self.__db = self.__query_model.props.db
-            self.props.settings.set_value("sorting", GLib.Variant("(sb)", ("EntryId", False)))
 
+            # init the entry-view's settings
+            self.props.settings.set_value(
+                    "sorting", GLib.Variant("(sb)", ("EntryId", False))
+                    )
             entry_view = self.get_entry_view()
             entry_view.get_column(RB.EntryViewColumn.TRACK_NUMBER).set_visible(False)
             entry_view.get_column(RB.EntryViewColumn.GENRE).set_visible(False)
             entry_view.get_column(RB.EntryViewColumn.DURATION).set_visible(False)
 
+            # load the song list
             if self.client.islogin:
                 self.load()
+
             self.__activated = True
 
     #def do_get_status(self, status, progress_text, progress):
@@ -109,7 +116,7 @@ class BaiduMusicSource(RB.BrowserSource):
 
     def __add_songs(self, songs):
         if songs:
-            songs.reverse()
+            #songs.reverse()
             for song in songs:
                 entry = RB.RhythmDBEntry.new(
                         self.__db, self.props.entry_type, song["songId"]
@@ -138,50 +145,46 @@ class BaiduMusicSource(RB.BrowserSource):
 
             self.__db.commit()
 
+    def __get_song_ids(self):
+        start, song_ids = 0, []
+        while True:
+            song_ids.extend(self.client.get_collect_ids(start))
+            start += 200
+            if start >= self.client.total:
+                song_ids.reverse()
+                break
+        return song_ids
+
+    def __get_songs(self, song_ids):
+        start, total = 0, len(song_ids)
+        while start < total:
+            songs = self.client.get_song_info(song_ids[start:start+200])
+            self.__add_songs(songs)
+            start += 200
+
+    def __load_cb(self, args):
+        self.__song_ids = self.__get_song_ids()
+        self.__get_songs(self.__song_ids)
+        return False
+
     def load(self):
-        start, size = (0, 200)
-        collect_list = []
-        self.__song_ids = []
+        Gdk.threads_add_idle(GLib.PRIORITY_DEFAULT_IDLE, self.__load_cb, [])
 
-        #self.__updating = True
-        song_ids = self.client.get_collect_ids(size, start)
-        self.__song_ids.extend(song_ids)
-        #self.__load_progress = (len(song_ids), self.client.total)
-        collect_list = self.client.get_song_info(song_ids)
-        #collect_list.extend(self.client.get_song_info(song_ids))
-        start = start + size
-        #self.__load_progress = (start, self.client.total)
-        #self.__add_songs(collect_list)
-        while start < self.client.total:
-            song_ids = self.client.get_collect_ids(size, start)
-            self.__song_ids.extend(song_ids)
-            collect_list = self.client.get_song_info(song_ids)
-            #collect_list.extend(self.client.get_song_info(song_ids))
-            start = start + size
-            #self.__load_progress = (start, self.client.total)
-        self.__add_songs(collect_list)
-        self.__song_ids.reverse()
-        #self.__updating = False
+    def __sync_cb(self, args):
+        song_ids = self.__get_song_ids()
 
-    def sync(self):
-        start, size = (0, 200)
-        song_ids = self.client.get_collect_ids(size, start)
-        start = start + size
-        while start < self.client.total:
-            song_ids.extend(self.client.get_collect_ids(size, start))
-            start = start + size
-
-        song_ids.reverse()
-        add_ids = song_ids[:]
-        delete_ids = []
+        # checkout the added items and the deleted items
+        add_ids = song_ids[:]   # the added items
+        delete_ids = []         # the delete items
         for key, item in enumerate(self.__song_ids):
             index = key - len(delete_ids)
-            if index>=len(song_ids) or song_ids[index] != item:
+            if index >= len(song_ids) or song_ids[index] != item:
                 delete_ids.append(item)
             elif song_ids[index] == item:
                 add_ids.remove(item)
         add_ids.reverse()
 
+        # traversal rows in the query model
         for row in self.__query_model:
             entry = row[0]
             song_id = int(entry.get_string(RB.RhythmDBPropType.LOCATION))
@@ -190,9 +193,20 @@ class BaiduMusicSource(RB.BrowserSource):
                 self.__db.entry_delete(entry)
 
         if add_ids:
-            collect_list = self.client.get_song_info(add_ids)
-            self.__add_songs(collect_list)
+            self.__get_songs(add_ids)
+
         self.__song_ids = song_ids
+        return False
+
+    def sync(self):
+        Gdk.threads_add_idle(GLib.PRIORITY_DEFAULT_IDLE, self.__sync_cb, [])
+
+    def test(self):
+        for row in self.__query_model:
+            entry = row[0]
+            print entry.get_ulong(RB.RhythmDBPropType.ENTRY_ID)
+            print entry.get_string(RB.RhythmDBPropType.LOCATION)
+            print entry.get_string(RB.RhythmDBPropType.TITLE)
 
     def clear(self):
         for row in self.__query_model:

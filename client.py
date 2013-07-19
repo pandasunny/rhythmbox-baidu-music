@@ -222,6 +222,13 @@ class Client(object):
             raise TokenError("Get token faild.")
 
     def login_check(self, username):
+        """ Check login status.
+
+        Returns:
+            A boolean about codestring. If the codestring is true, visit the
+        url "https://passport.baidu.com/cgi-bin/genimage?<codestring>" to get
+        a captcha image. The get image function is self.get_captcha().
+        """
         #callback = self.__getCallbackString()
         callback = ""
         url = PASSPORT_URL + "/v2/api/?logincheck&"
@@ -240,6 +247,11 @@ class Client(object):
         return bool(self.__codestring)
 
     def get_captcha(self):
+        """ Get the captcha image.
+
+        Returns:
+            A file byte about the image.
+        """
         url = PASSPORT_URL + "/cgi-bin/genimage?" + self.__codestring
         response = self.__request(url, "GET")
         return response
@@ -271,7 +283,6 @@ class Client(object):
 
         TODO:
             1.use the phone number to login the baidu music
-            2.when err_no = 257, use the codestring
         """
         url = PASSPORT_URL + "/v2/api/?login"
         params = {
@@ -294,11 +305,9 @@ class Client(object):
         if remember:
             params["mem_pass"] = "on"
         #headers = {"Referer": REFERER_URL}
-
         response = self.__request(url, "POST", params)
 
         errno = re.search("err_no=(\d+)", response).group(1)
-
         if errno == "0":
             logging.info("Login successed!")
             self.__bdu = re.search("hao123Param=(\w+)", response).group(1)
@@ -357,21 +366,6 @@ class Client(object):
         self.islogin = False
         logging.info("Logout successed!")
 
-    #@property
-    #def cloud(self):
-        #""" The property has all informations about music cloud.
-
-        #Returns:
-            #A dict includes all informations about cloud. This dict has five
-            #items, includes the returns from self.__get_cloud_info() and
-            #self.__get_song_info().
-        #"""
-        #if self.islogin and not self.__cloud:
-            #self.__cloud.update(self.__get_cloud_info())
-            #song_ids = self.__get_collect_ids(self.__cloud["cloud_used"])
-            #self.__cloud["collect_list"] = self.__get_song_info(song_ids)
-        #return self.__cloud
-
     def __get_cloud_info(self):
         """ Get the information of baidu cloud music.
 
@@ -388,7 +382,7 @@ class Client(object):
                 response["cloud_surplus"])
         return response
 
-    def get_collect_ids(self, size, start=0):
+    def get_collect_ids(self, start, size=200):
         """ Get all the ids of collect list.
 
         Returns:
@@ -427,6 +421,7 @@ class Client(object):
             logging.debug("The song IDs: %s", str(song_ids))
             self.total = int(response["data"]["total"])
             return song_ids
+        return False
 
     def get_song_info(self, song_ids):
         """ Get basic information of songs whose id in the param 'song_ids'.
@@ -462,6 +457,7 @@ class Client(object):
             result = response["data"]["songList"]
             logging.debug("The song list: %s", str(result))
             return result
+        return False
 
     def get_song_links(self, song_ids, artist=[], title=[], link_type="stream"):
         """ Get the informations about song's links.
@@ -522,14 +518,15 @@ class Client(object):
                 count: the count of songs,
                 page: the current page number,
                 num: the number of songs per page,
-                song: {
+                song: [{
                     id: the song id,
                     url: the song shown url,
                     artist: the artist of song,
                     title: the title of song,
                     album: the album of song,
                     num: unknown
-                    }
+                    }, ...
+                ]
             }
         """
         url = TTPLAYER_URL + "/app/search/searchList.php?"
@@ -574,18 +571,18 @@ class Client(object):
             result = {}
         return result
 
-    def add_favorite_songs(self, ids):
+    def add_favorite_songs(self, song_ids):
         """ Add some songs from baidu cloud.
 
         Args:
-            ids: A list includes all ids of songs.
+            song_ids: A list includes all ids of songs.
 
         Returns:
             A boolean "False" or a list includes the dicts of song.
         """
         url = MUSICBOX_URL + "/data/user/collect"
         params = {
-            "ids": ",".join(map(str, ids)),
+            "ids": ",".join(map(str, song_ids)),
             "type": "song",
             "cloud_type": 0
             }
@@ -596,21 +593,20 @@ class Client(object):
             ids = response["data"]["collectIds"]
             logging.debug("The successful collection of songs: %s", str(ids))
             return self.__get_song_info(ids)
-        else:
-            return False
+        return False
 
-    def remove_favorite_songs(self, ids):
+    def remove_favorite_songs(self, song_ids):
         """ Remove some songs from baidu cloud.
 
         Args:
-            ids: A list includes all ids of songs.
+            song_ids: A list includes all ids of songs.
 
         Returns:
             A boolean.
         """
         url = MUSICBOX_URL + "/data/user/deletecollectsong"
         params = {
-            "songIds": ",".join(map(str, ids)),
+            "songIds": ",".join(map(str, song_ids)),
             "type": "song"
             }
 
