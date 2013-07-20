@@ -201,6 +201,10 @@ class BaiduMusicSource(RB.BrowserSource):
     def sync(self):
         Gdk.threads_add_idle(GLib.PRIORITY_DEFAULT_IDLE, self.__sync_cb, [])
 
+    def add(self, songs):
+        songs.reverse()
+        self.__add_songs(songs)
+
     def test(self):
         for row in self.__query_model:
             entry = row[0]

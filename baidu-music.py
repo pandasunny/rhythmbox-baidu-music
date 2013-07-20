@@ -11,6 +11,7 @@ from gi.repository import GdkPixbuf
 
 from client import Client
 from source import BaiduMusicSource
+from search import SearchHandle
 
 import gettext
 #gettext.install("rhythmbox", RB.locale_dir())
@@ -21,7 +22,7 @@ POPUP_UI = """
   <toolbar name="SourceToolbar">
     <toolitem name="BaiduMusicLogin" action="BaiduMusicLoginAction"/>
     <toolitem name="Browse" action="ViewBrowser"/>
-    <!-- <toolitem name="BaiduMusicSearch" action="BaiduMusicSearchAction"/> -->
+    <toolitem name="BaiduMusicSearch" action="BaiduMusicSearchAction"/>
     <toolitem name="BaiduMusicSync" action="BaiduMusicSyncAction"/>
     <!-- <toolitem name="BaiduMusicTest" action="BaiduMusicTestAction"/> -->
   </toolbar>
@@ -137,6 +138,8 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
         manager.insert_action_group(self.action_group, 0)
         manager.ensure_update()
 
+        self.__search_window = None
+
     def do_deactivate(self):
         print "Baidu Music Plugin is deactivated"
 
@@ -149,6 +152,8 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
         self.ui_id = None
         self.action_group = None
 
+        self.__search_window.destroy()
+        self.__search_window = None
         #self.db.entry_delete_by_type(self.entry_type)
         #self.db.commit()
 
@@ -164,7 +169,23 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
         self.client = None
 
     def __search_music(self, widget):
-        pass
+
+        if not self.__search_window:
+            builder = Gtk.Builder()
+            builder.add_from_file(rb.find_plugin_file(self, "search.ui"))
+
+            self.__search_window = builder.get_object("search_window")
+            self.__search_window.connect("delete_event", lambda w, e: w.hide() or True)
+
+            builder.connect_signals(
+                    SearchHandle(
+                        builder = builder,
+                        source = self.source,
+                        client = self.client
+                        )
+                    )
+
+        self.__search_window.show_all()
 
     def __login_action(self, widget):
         if self.client.islogin:

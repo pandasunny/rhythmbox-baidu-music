@@ -524,7 +524,7 @@ class Client(object):
                     artist: the artist of song,
                     title: the title of song,
                     album: the album of song,
-                    num: unknown
+                    # num: unknown
                     }, ...
                 ]
             }
@@ -539,11 +539,17 @@ class Client(object):
 
         # Get all songs from this search page with re. The example page is in
         # url(http://qianqianmini.baidu.com/app/search/searchList.php?qword=).
+        # old resong
+        #reSong = re.compile(r"<td class='uName'><[^>]+?"
+                #r"title=\"(?P<album>[^\"]*)\">.+\n"
+                #r".+?addSong\("
+                #r"'(?P<id>\d*)','(?P<url>[^']*)','(?P<artist>[^']*)',"
+                #r"'(?P<title>[^']*)','(?P<num>\d*)'\)\"", re.MULTILINE)
         reSong = re.compile(r"<td class='uName'><[^>]+?"
                 r"title=\"(?P<album>[^\"]*)\">.+\n"
                 r".+?addSong\("
                 r"'(?P<id>\d*)','(?P<url>[^']*)','(?P<artist>[^']*)',"
-                r"'(?P<title>[^']*)','(?P<num>\d*)'\)\"", re.MULTILINE)
+                r"'(?P<title>[^']*)',[^\"]+\"", re.MULTILINE)
         for song in reSong.finditer(response):
             songs.append({
                 "id": song.group("id"),
@@ -551,7 +557,7 @@ class Client(object):
                 "artist": song.group("artist"),
                 "title": song.group("title"),
                 "album": song.group("album"),
-                "num": song.group("num")
+                #"num": song.group("num")
                 })
 
         # Get the page information.
@@ -562,9 +568,9 @@ class Client(object):
         page = rePage.search(response)
         if page:
             result = {
-                    "count": page.group("count"),
-                    "page": page.group("page"),
-                    "num": page.group("num"),
+                    "count": int(page.group("count")),
+                    "page": int(page.group("page")),
+                    "num": int(page.group("num")),
                     "songs": songs
                     }
         else:
@@ -591,8 +597,9 @@ class Client(object):
         response = json.loads(self.__request(url, "POST", params, headers))
         if response["errorCode"] == 22000:
             ids = response["data"]["collectIds"]
-            logging.debug("The successful collection of songs: %s", str(ids))
-            return self.__get_song_info(ids)
+            if ids:
+                logging.debug("The successful collection of songs: %s", str(ids))
+                return self.get_song_info(ids)
         return False
 
     def remove_favorite_songs(self, song_ids):
@@ -612,6 +619,6 @@ class Client(object):
 
         response = json.loads(self.__request(url, "POST", params))
         result = True if response["errorCode"] == 22000 else False
-        logging.debug("The deleted collection of songs: %s", str(ids))
+        logging.debug("The deleted collection of songs: %s", str(song_ids))
         return result
 
