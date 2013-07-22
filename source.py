@@ -12,14 +12,20 @@ class BaiduMusicSource(RB.BrowserSource):
 
         self.client = None
 
+        # source's status
         self.__activated = False
-        #self.__updating = False
-        #self.__load_progress = (0, 0)
+        self.__updating_ids = False
+        self.__updating_list = False
+        self.__load_progress = (0, 0)
 
+        # set up the coverart
         self.__albumart = {}
         self.__art_store = RB.ExtDB(name="album-art")
-        self.__req_id = self.__art_store.connect("request", self.__album_art_requested)
+        self.__req_id = self.__art_store.connect(
+                "request", self.__album_art_requested
+                )
 
+        # the collect songs' IDs
         self.__song_ids = []
 
     def do_selected(self):
@@ -32,10 +38,10 @@ class BaiduMusicSource(RB.BrowserSource):
             self.props.settings.set_value(
                     "sorting", GLib.Variant("(sb)", ("EntryId", False))
                     )
-            entry_view = self.get_entry_view()
-            entry_view.get_column(RB.EntryViewColumn.TRACK_NUMBER).set_visible(False)
-            entry_view.get_column(RB.EntryViewColumn.GENRE).set_visible(False)
-            entry_view.get_column(RB.EntryViewColumn.DURATION).set_visible(False)
+            ev = self.get_entry_view()
+            ev.get_column(RB.EntryViewColumn.TRACK_NUMBER).set_visible(False)
+            ev.get_column(RB.EntryViewColumn.GENRE).set_visible(False)
+            ev.get_column(RB.EntryViewColumn.DURATION).set_visible(False)
 
             # load the song list
             if self.client.islogin:
@@ -43,17 +49,24 @@ class BaiduMusicSource(RB.BrowserSource):
 
             self.__activated = True
 
-    #def do_get_status(self, status, progress_text, progress):
-        #if self.__updating:
-            #complete, total = self.__load_progress
-            #if total > 0:
-                #progress = min(float(complete) / total, 1.0)
-            #else:
-                #progress = -1.0
-            #return (_("Loading collect songs"), None, progress)
-        #else:
-            #qm = self.props.query_model
-            #return (qm.compute_status_normal("%d song", "%d songs"), None, 2.0)
+    def do_get_status(self, status, progress_text, progress):
+        if self.__updating_ids:
+            complete, total = self.__load_progress
+            if total > 0:
+                progress = min(float(complete) / total, 1.0)
+            else:
+                progress = -1.0
+            return (_("Loading song IDs ..."), None, progress)
+        elif self.__updating_list:
+            complete, total = self.__load_progress
+            if total > 0:
+                progress = min(float(complete) / total, 1.0)
+            else:
+                progress = -1.0
+            return (_("Loading song list ..."), None, progress)
+        else:
+            qm = self.props.query_model
+            return (qm.compute_status_normal("%d song", "%d songs"), None, 2.0)
 
     def do_add_uri(self):
         return False
@@ -115,59 +128,70 @@ class BaiduMusicSource(RB.BrowserSource):
             store.store_uri(storekey, RB.ExtDBSourceType.SEARCH, uri)
 
     def __add_songs(self, songs):
-        if songs:
-            #songs.reverse()
-            for song in songs:
-                entry = RB.RhythmDBEntry.new(
-                        self.__db, self.props.entry_type, song["songId"]
-                        )
-                self.__db.entry_set(
-                        entry, RB.RhythmDBPropType.TITLE,
-                        song["songName"].encode("utf-8")
-                        )
-                self.__db.entry_set(
-                        entry, RB.RhythmDBPropType.ARTIST,
-                        song["artistName"].encode("utf-8")
-                        )
-                self.__db.entry_set(
-                        entry, RB.RhythmDBPropType.ALBUM,
-                        song["albumName"].encode("utf-8")
-                        )
-                self.__query_model.add_entry(entry, 0)
+        if not songs:
+            return False
 
-                if song["songPicBig"]:
-                    albumart = song["songPicBig"]
-                elif song["songPicRadio"]:
-                    albumart = song["songPicRadio"]
-                else:
-                    albumart = song["songPicSmall"]
-                self.__albumart[song["artistName"]+song["albumName"]] = albumart
+        for song in songs:
+            entry = RB.RhythmDBEntry.new(
+                    self.__db, self.props.entry_type, song["songId"]
+                    )
+            self.__db.entry_set(
+                    entry, RB.RhythmDBPropType.TITLE,
+                    song["songName"].encode("utf-8")
+                    )
+            self.__db.entry_set(
+                    entry, RB.RhythmDBPropType.ARTIST,
+                    song["artistName"].encode("utf-8")
+                    )
+            self.__db.entry_set(
+                    entry, RB.RhythmDBPropType.ALBUM,
+                    song["albumName"].encode("utf-8")
+                    )
+            self.__query_model.add_entry(entry, 0)
 
-            self.__db.commit()
+            if song["songPicBig"]:
+                albumart = song["songPicBig"]
+            elif song["songPicRadio"]:
+                albumart = song["songPicRadio"]
+            else:
+                albumart = song["songPicSmall"]
+            self.__albumart[song["artistName"]+song["albumName"]] = albumart
+
+        self.__db.commit()
 
     def __get_song_ids(self):
         start, song_ids = 0, []
         while True:
             song_ids.extend(self.client.get_collect_ids(start))
+            self.__load_progress = (start, self.client.total)
             start += 200
             if start >= self.client.total:
                 song_ids.reverse()
+                self.__updating_ids = False
+                self.__updating_list = True
                 break
+        self.__load_progress = (start, self.client.total)
         return song_ids
 
     def __get_songs(self, song_ids):
-        start, total = 0, len(song_ids)
+        start, total, songs = 0, len(song_ids), []
         while start < total:
-            songs = self.client.get_song_info(song_ids[start:start+200])
-            self.__add_songs(songs)
+            songs.extend(self.client.get_song_info(song_ids[start:start+200]))
+            self.__load_progress = (start, total)
             start += 200
+        self.__load_progress = (start, total)
+        self.__updating_list = False
+        return songs
 
     def __load_cb(self, args):
         self.__song_ids = self.__get_song_ids()
-        self.__get_songs(self.__song_ids)
+        songs = self.__get_songs(self.__song_ids)
+        self.__add_songs(songs)
         return False
 
     def load(self):
+        self.__updating_ids = True
+        self.__updating_list = False
         Gdk.threads_add_idle(GLib.PRIORITY_DEFAULT_IDLE, self.__load_cb, [])
 
     def __sync_cb(self, args):
@@ -185,25 +209,30 @@ class BaiduMusicSource(RB.BrowserSource):
         add_ids.reverse()
 
         # traversal rows in the query model
-        for row in self.__query_model:
-            entry = row[0]
-            song_id = int(entry.get_string(RB.RhythmDBPropType.LOCATION))
-            if song_id in delete_ids:
-                self.__query_model.remove_entry(entry)
-                self.__db.entry_delete(entry)
+        if delete_ids:
+            for row in self.__query_model:
+                entry = row[0]
+                song_id = int(entry.get_string(RB.RhythmDBPropType.LOCATION))
+                if song_id in delete_ids:
+                    self.__query_model.remove_entry(entry)
+                    self.__db.entry_delete(entry)
 
         if add_ids:
-            self.__get_songs(add_ids)
+            songs = self.__get_songs(add_ids)
+            self.__add_songs(songs)
 
         self.__song_ids = song_ids
         return False
 
     def sync(self):
+        self.__updating_ids = True
+        self.__updating_list = False
         Gdk.threads_add_idle(GLib.PRIORITY_DEFAULT_IDLE, self.__sync_cb, [])
 
     def add(self, songs):
-        songs.reverse()
-        self.__add_songs(songs)
+        if songs:
+            songs.reverse()
+            self.__add_songs(songs)
 
     def test(self):
         for row in self.__query_model:

@@ -152,8 +152,9 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
         self.ui_id = None
         self.action_group = None
 
-        self.__search_window.destroy()
-        self.__search_window = None
+        if self.__search_window:
+            self.__search_window.destroy()
+            self.__search_window = None
         #self.db.entry_delete_by_type(self.entry_type)
         #self.db.commit()
 
