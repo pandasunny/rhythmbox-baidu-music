@@ -1,8 +1,13 @@
 # -*- coding: utf-8 -*-
+from __future__ import division
+import threading
+
 from gi.repository import GObject
 from gi.repository import GLib
 from gi.repository import Gdk
 from gi.repository import RB
+
+DELTA = 200
 
 
 class BaiduMusicSource(RB.BrowserSource):
@@ -14,9 +19,10 @@ class BaiduMusicSource(RB.BrowserSource):
 
         # source's status
         self.__activated = False
-        self.__updating_ids = False
-        self.__updating_list = False
-        self.__load_progress = (0, 0)
+        # get_status function
+        self.__updating = False
+        self.__status = ""
+        self.__progress = 0
 
         # set up the coverart
         self.__albumart = {}
@@ -41,7 +47,7 @@ class BaiduMusicSource(RB.BrowserSource):
             ev = self.get_entry_view()
             ev.get_column(RB.EntryViewColumn.TRACK_NUMBER).set_visible(False)
             ev.get_column(RB.EntryViewColumn.GENRE).set_visible(False)
-            ev.get_column(RB.EntryViewColumn.DURATION).set_visible(False)
+            #ev.get_column(RB.EntryViewColumn.DURATION).set_visible(False)
 
             # load the song list
             if self.client.islogin:
@@ -50,20 +56,9 @@ class BaiduMusicSource(RB.BrowserSource):
             self.__activated = True
 
     def do_get_status(self, status, progress_text, progress):
-        if self.__updating_ids:
-            complete, total = self.__load_progress
-            if total > 0:
-                progress = min(float(complete) / total, 1.0)
-            else:
-                progress = -1.0
-            return (_("Loading song IDs ..."), None, progress)
-        elif self.__updating_list:
-            complete, total = self.__load_progress
-            if total > 0:
-                progress = min(float(complete) / total, 1.0)
-            else:
-                progress = -1.0
-            return (_("Loading song list ..."), None, progress)
+        progress_text = None
+        if self.__updating:
+            return (self.__status, progress_text, self.__progress)
         else:
             qm = self.props.query_model
             return (qm.compute_status_normal("%d song", "%d songs"), None, 2.0)
@@ -113,6 +108,10 @@ class BaiduMusicSource(RB.BrowserSource):
         self.__req_id = None
         self.__art_store = None
 
+        self.__updating = None
+        self.__status = None
+        self.__progress = None
+
         self.__song_ids = None
         RB.BrowserSource.delete_thyself(self)
 
@@ -128,6 +127,11 @@ class BaiduMusicSource(RB.BrowserSource):
             store.store_uri(storekey, RB.ExtDBSourceType.SEARCH, uri)
 
     def __add_songs(self, songs):
+        """ Create entries and commit.
+
+        Args:
+            songs: A list includes all songs.
+        """
         if not songs:
             return False
 
@@ -160,41 +164,66 @@ class BaiduMusicSource(RB.BrowserSource):
         self.__db.commit()
 
     def __get_song_ids(self):
+        """ Get all ids of songs from baidu music.
+
+        Returns:
+            A list includes all ids.
+        """
+        self.__status = _("Loading song IDs...")
         start, song_ids = 0, []
         while True:
             song_ids.extend(self.client.get_collect_ids(start))
-            self.__load_progress = (start, self.client.total)
-            start += 200
+            self.__progress = start/self.client.total
+            self.notify_status_changed()
+            start += DELTA
             if start >= self.client.total:
                 song_ids.reverse()
-                self.__updating_ids = False
-                self.__updating_list = True
                 break
-        self.__load_progress = (start, self.client.total)
+        self.__progress = start/self.client.total
+        self.notify_status_changed()
         return song_ids
 
     def __get_songs(self, song_ids):
+        """ Get all informations of songs.
+
+        Args:
+            song_ids: A list includes all songs' IDs.
+
+        Returns:
+            A list includes all informations.
+        """
+        self.__status = _("Loading song list...")
         start, total, songs = 0, len(song_ids), []
         while start < total:
-            songs.extend(self.client.get_song_info(song_ids[start:start+200]))
-            self.__load_progress = (start, total)
-            start += 200
-        self.__load_progress = (start, total)
-        self.__updating_list = False
+            songs.extend(self.client.get_song_info(song_ids[start:start+DELTA]))
+            self.__progress = start/total
+            self.notify_status_changed()
+            start += DELTA
+        self.__progress = start/total
+        self.notify_status_changed()
         return songs
 
-    def __load_cb(self, args):
+    def __load_cb(self):
+        """ The callback function of load all songs. """
+        self.__updating = True
         self.__song_ids = self.__get_song_ids()
         songs = self.__get_songs(self.__song_ids)
-        self.__add_songs(songs)
-        return False
+        Gdk.threads_add_idle(
+                GLib.PRIORITY_DEFAULT_IDLE, self.__add_songs, songs
+                )
+        #self.__add_songs(songs)
+        self.__updating = False
+        self.notify_status_changed()
 
     def load(self):
-        self.__updating_ids = True
-        self.__updating_list = False
-        Gdk.threads_add_idle(GLib.PRIORITY_DEFAULT_IDLE, self.__load_cb, [])
+        """ The thread function of load all songs. """
+        #Gdk.threads_add_idle(GLib.PRIORITY_DEFAULT_IDLE, self.__load_cb, [])
+        thread = threading.Thread(target=self.__load_cb)
+        thread.start()
 
-    def __sync_cb(self, args):
+    def __sync_cb(self):
+        """ The callback function of sync all songs. """
+        self.__updating = True
         song_ids = self.__get_song_ids()
 
         # checkout the added items and the deleted items
@@ -219,15 +248,19 @@ class BaiduMusicSource(RB.BrowserSource):
 
         if add_ids:
             songs = self.__get_songs(add_ids)
-            self.__add_songs(songs)
+            Gdk.threads_add_idle(
+                    GLib.PRIORITY_DEFAULT_IDLE, self.__add_songs, songs
+                    )
+            #self.__add_songs(songs)
 
         self.__song_ids = song_ids
-        return False
+        self.__updating = False
+        self.notify_status_changed()
 
     def sync(self):
-        self.__updating_ids = True
-        self.__updating_list = False
-        Gdk.threads_add_idle(GLib.PRIORITY_DEFAULT_IDLE, self.__sync_cb, [])
+        """ The thread function of sync all songs. """
+        thread = threading.Thread(target=self.__sync_cb)
+        thread.start()
 
     def add(self, songs):
         if songs:
