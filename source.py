@@ -265,7 +265,9 @@ class BaiduMusicSource(RB.BrowserSource):
     def add(self, songs):
         if songs:
             songs.reverse()
-            self.__add_songs(songs)
+            Gdk.threads_add_idle(
+                    GLib.PRIORITY_DEFAULT_IDLE, self.__add_songs, songs
+                    )
 
     def test(self):
         for row in self.__query_model:

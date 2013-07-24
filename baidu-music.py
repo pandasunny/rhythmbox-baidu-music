@@ -236,9 +236,9 @@ class BaiduMusicEntryType(RB.RhythmDBEntryType):
     def do_get_playback_uri(self, entry):
         db = self.props.db
         songinfo = self.client.get_song_links(
-                entry.dup_string(RB.RhythmDBPropType.LOCATION).split("`"),
-                entry.dup_string(RB.RhythmDBPropType.ARTIST).split("`"),
-                entry.dup_string(RB.RhythmDBPropType.TITLE).split("`")
+                [entry.dup_string(RB.RhythmDBPropType.LOCATION)],
+                [entry.dup_string(RB.RhythmDBPropType.ARTIST)],
+                [entry.dup_string(RB.RhythmDBPropType.TITLE)]
                 )
         song = songinfo[0]["fileslist"][0]
         db.entry_set(entry, RB.RhythmDBPropType.DURATION, song["time"])

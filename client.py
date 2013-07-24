@@ -597,6 +597,7 @@ class Client(object):
         response = json.loads(self.__request(url, "POST", params, headers))
         if response["errorCode"] == 22000:
             ids = response["data"]["collectIds"]
+            ids = [ids] if isinstance(ids, int) else ids
             if ids:
                 logging.debug("The successful collection of songs: %s", str(ids))
                 return self.get_song_info(ids)
