@@ -100,9 +100,9 @@ class BaiduMusicSource(RB.BrowserSource):
                     self.__song_ids)
 
     def do_delete_thyself(self):
-        #db = self.props.query_model.props.db
-        #db.entry_delete_by_type(self.props.entry_type)
-        #db.commit()
+        self.__db.entry_delete_by_type(self.props.entry_type)
+        self.__db.commit()
+
         self.__albumart = None
         self.__art_store.disconnect(self.__req_id)
         self.__req_id = None
@@ -263,6 +263,11 @@ class BaiduMusicSource(RB.BrowserSource):
         thread.start()
 
     def add(self, songs):
+        """ Create entries with songs.
+
+        Args:
+            songs: A list includes songs.
+        """
         if songs:
             songs.reverse()
             Gdk.threads_add_idle(
@@ -277,9 +282,8 @@ class BaiduMusicSource(RB.BrowserSource):
             print entry.get_string(RB.RhythmDBPropType.TITLE)
 
     def clear(self):
-        for row in self.__query_model:
-            entry = row[0]
-            self.__query_model.remove_entry(entry)
-            self.__db.entry_delete(entry)
+        """ Clear all entries in the source. """
+        self.__db.entry_delete_by_type(self.props.entry_type)
+        self.__db.commit()
 
 GObject.type_register(BaiduMusicSource)
