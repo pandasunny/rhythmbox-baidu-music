@@ -232,22 +232,32 @@ class BaiduMusicEntryType(RB.RhythmDBEntryType):
                 name="baidu-music-entry-type",
                 #has-playlists=False
                 )
+        self.settings = Gio.Settings("org.gnome.rhythmbox.plugins.baidu-music")
         self.client = None
 
     def do_get_playback_uri(self, entry):
         db = self.props.db
+        song_id = entry.get_string(RB.RhythmDBPropType.LOCATION)
+        artist = entry.get_string(RB.RhythmDBPropType.ARTIST)
+        title = entry.get_string(RB.RhythmDBPropType.TITLE)
         songinfo = self.client.get_song_links(
-                [entry.dup_string(RB.RhythmDBPropType.LOCATION)],
-                [entry.dup_string(RB.RhythmDBPropType.ARTIST)],
-                [entry.dup_string(RB.RhythmDBPropType.TITLE)]
+                [song_id], [artist], [title]
                 )
         song = songinfo[0]["fileslist"][0]
         db.entry_set(entry, RB.RhythmDBPropType.DURATION, song["time"])
         db.entry_set(entry, RB.RhythmDBPropType.FILE_SIZE, song["size"])
         db.entry_set(entry, RB.RhythmDBPropType.BITRATE, song["rate"])
-        #print "song title: %s" % songinfo[0]["title"].encode("utf-8")
-        #print "song link: %s" % song["songLink"]
-        #print "song lrc: %s" % song["lrcLink"]
+
+        def save_lyric_cb(data):
+            path = os.path.expanduser(self.settings["lyric-path"])
+            filename = "%s-%s.lrc" % (artist, title)
+            with open(os.path.join(path, filename), "wb") as lyric:
+                lyric.write(data)
+                lyric.close()
+        if song["lrcLink"]:
+            loader =  rb.Loader()
+            loader.get_url(song["lrcLink"], save_lyric_cb)
+
         return song["songLink"]
 
     def do_can_sync_metadata(self, entry):
