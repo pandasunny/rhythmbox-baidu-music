@@ -21,13 +21,15 @@ class LoginDialog(Gtk.Dialog):
         # baidu url
         signup_url = Gtk.Label()
         signup_url.set_markup("<a href='https://passport.baidu.com/v2/?reg'>"
-                + _("sign up") + "</a>")
+                + _("Sign up") + "</a>")
         signup_url.set_halign(Gtk.Align.START)
+        signup_url.set_can_focus(False)
 
         forgotpassword_url = Gtk.Label()
         forgotpassword_url.set_markup(
                 "<a href='https://passport.baidu.com/?getpass_index'>"
-                + _("forgot?") + "</a>")
+                + _("Forgot?") + "</a>")
+        forgotpassword_url.set_can_focus(False)
 
         grid = Gtk.Grid()
         grid.set_column_spacing(5)

@@ -95,7 +95,7 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
         action = Gtk.Action(
                 name="BaiduMusicSearchAction",
                 label=_("Search"),
-                tooltip=_("Search music from baidu music."),
+                tooltip=_("Search music from the baidu music."),
                 stock_id=Gtk.STOCK_FIND
                 )
         action.connect("activate", self.__search_music)
@@ -105,14 +105,14 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
             action = Gtk.Action(
                     name="BaiduMusicLoginAction",
                     label=_("Logout"),
-                    tooltip=_("Log out the baidu music."),
+                    tooltip=_("Sign out the baidu music."),
                     stock_id=None
                     )
         else:
             action = Gtk.Action(
                     name="BaiduMusicLoginAction",
                     label=_("Login"),
-                    tooltip=_("Log in the baidu music."),
+                    tooltip=_("Sign in the baidu music."),
                     stock_id=None
                     )
         action.connect("activate", self.__login_action)
@@ -121,7 +121,7 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
         action = Gtk.Action(
                 name="BaiduMusicSyncAction",
                 label=_("Synchronize"),
-                tooltip=_("Synchronize the collect data."),
+                tooltip=_("Synchronize data."),
                 stock_id=None
                 )
         action.connect("activate", lambda a: shell.props.selected_page.sync())
@@ -203,7 +203,7 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
                     self.settings["password"] = ""
                     self.source.clear()
                     widget.set_label(_("Login"))
-                    widget.set_tooltip(_("Log in the baidu music."))
+                    widget.set_tooltip(_("Sign in the baidu music."))
             dialog.destroy()
         else:
             # login function
@@ -219,7 +219,7 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
                     dialog.destroy()
                     self.source.load()
                     widget.set_label(_("Logout"))
-                    widget.set_tooltip(_("Log out the baidu music."))
+                    widget.set_tooltip(_("Sign out the baidu music."))
                 except Exception as e:
                     print e
 
