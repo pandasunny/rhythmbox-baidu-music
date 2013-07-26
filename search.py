@@ -96,11 +96,19 @@ class SearchHandle(object):
             for song in self.__liststore:
                 song[0] = False
             self.__select_all = False
+            widget.set_label(_("Select All"))
+            widget.set_tooltip_text(
+                    _("Select all songs which can be selected.")
+                    )
         else:
             for song in self.__liststore:
                 song[0] = True
                 self.__song_ids.append(song[1])
             self.__select_all = True
+            widget.set_label(_("Reject All"))
+            widget.set_tooltip_text(
+                    _("Reject all songs which be selected.")
+                    )
         self.__check_buttons_status()
 
     def on_first(self, widget):

@@ -14,9 +14,16 @@ from source import BaiduMusicSource
 from search import SearchHandle
 from dialog import LoginDialog
 
+import locale
 import gettext
-#gettext.install("rhythmbox", RB.locale_dir())
-#gettext.translation("messages", "./locale/", languages=["zh_CN"]).install(True)
+
+APPNAME = "rhythmbox-baidu-music"
+#gettext.install(APPNAME, RB.locale_dir())
+
+LOCALE_DIR = RB.find_user_data_file("plugins/baidu-music/po")
+locale.setlocale(locale.LC_ALL, "")
+locale.bindtextdomain(APPNAME, LOCALE_DIR)
+gettext.translation(APPNAME, LOCALE_DIR, languages=["zh_CN"]).install(True)
 
 POPUP_UI = """
 <ui>
@@ -73,7 +80,10 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
         shell.register_entry_type_for_source(self.source, self.entry_type)
 
         # init the api class
-        cookie = os.path.join(self.plugin_info.get_data_dir(), "cookie")
+        cache_dir = RB.find_user_cache_file("baidu-music")
+        if not os.path.isdir(cache_dir):
+            os.mkdir(cache_dir)
+        cookie =  RB.find_user_cache_file("baidu-music/cookie")
         self.client = Client(cookie, debug=False)
         username = self.settings.get_string("username")
         password = self.settings.get_string("password")
@@ -174,9 +184,13 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
 
         if not self.__search_window:
             builder = Gtk.Builder()
+            builder.set_translation_domain(APPNAME)
             builder.add_from_file(rb.find_plugin_file(self, "search.ui"))
 
             self.__search_window = builder.get_object("search_window")
+            self.__search_window.set_icon_from_file(
+                    rb.find_plugin_file(self, "music.png")
+                    )
             self.__search_window.connect("delete_event", lambda w, e: w.hide() or True)
 
             builder.connect_signals(

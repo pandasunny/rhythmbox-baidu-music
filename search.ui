@@ -167,12 +167,12 @@
           <object class="GtkToolbar" id="toolbar">
             <property name="visible">True</property>
             <property name="can_focus">False</property>
-            <property name="toolbar_style">icons</property>
             <property name="show_arrow">False</property>
             <child>
               <object class="GtkToolButton" id="select_all_button">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
+                <property name="tooltip_text" translatable="yes">Select all songs which can be selected.</property>
                 <property name="label" translatable="yes">Select All</property>
                 <property name="use_underline">True</property>
                 <property name="stock_id">gtk-select-all</property>
@@ -187,6 +187,7 @@
               <object class="GtkToolButton" id="collect_button">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
+                <property name="tooltip_text" translatable="yes">Collect all selected songs.</property>
                 <property name="label" translatable="yes">Collect</property>
                 <property name="use_underline">True</property>
                 <property name="icon_name">emblem-favorite</property>
@@ -211,6 +212,7 @@
               <object class="GtkToolButton" id="first_button">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
+                <property name="tooltip_text" translatable="yes">Go to the first page.</property>
                 <property name="label" translatable="yes">First</property>
                 <property name="use_underline">True</property>
                 <property name="stock_id">gtk-goto-first</property>
@@ -225,6 +227,7 @@
               <object class="GtkToolButton" id="back_button">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
+                <property name="tooltip_text" translatable="yes">Go to the back page.</property>
                 <property name="label" translatable="yes">Back</property>
                 <property name="use_underline">True</property>
                 <property name="stock_id">gtk-go-back</property>
@@ -239,6 +242,7 @@
               <object class="GtkToolButton" id="forward_button">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
+                <property name="tooltip_text" translatable="yes">Go to the next page.</property>
                 <property name="label" translatable="yes">Forward</property>
                 <property name="use_underline">True</property>
                 <property name="stock_id">gtk-go-forward</property>
@@ -253,6 +257,7 @@
               <object class="GtkToolButton" id="last_button">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
+                <property name="tooltip_text" translatable="yes">Go to the last page.</property>
                 <property name="label" translatable="yes">Last</property>
                 <property name="use_underline">True</property>
                 <property name="stock_id">gtk-goto-last</property>
