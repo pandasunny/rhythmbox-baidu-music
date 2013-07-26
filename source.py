@@ -270,6 +270,7 @@ class BaiduMusicSource(RB.BrowserSource):
         """
         if songs:
             songs.reverse()
+            self.__song_ids.extend([int(song["songId"]) for song in songs])
             Gdk.threads_add_idle(
                     GLib.PRIORITY_DEFAULT_IDLE, self.__add_songs, songs
                     )
