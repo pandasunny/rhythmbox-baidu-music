@@ -100,8 +100,9 @@ class BaiduMusicSource(RB.BrowserSource):
                     self.__song_ids)
 
     def do_delete_thyself(self):
-        self.__db.entry_delete_by_type(self.props.entry_type)
-        self.__db.commit()
+        if self.__activated:
+            self.__db.entry_delete_by_type(self.props.entry_type)
+            self.__db.commit()
 
         self.__albumart = None
         self.__art_store.disconnect(self.__req_id)
