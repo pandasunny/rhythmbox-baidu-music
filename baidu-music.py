@@ -14,16 +14,10 @@ from source import BaiduMusicSource
 from search import SearchHandle
 from dialog import LoginDialog
 
-import locale
 import gettext
 
 APPNAME = "rhythmbox-baidu-music"
-#gettext.install(APPNAME, RB.locale_dir())
-
-LOCALE_DIR = RB.find_user_data_file("plugins/baidu-music/po")
-locale.setlocale(locale.LC_ALL, "")
-locale.bindtextdomain(APPNAME, LOCALE_DIR)
-gettext.translation(APPNAME, LOCALE_DIR, languages=["zh_CN"]).install(True)
+gettext.install(APPNAME, RB.locale_dir())
 
 POPUP_UI = """
 <ui>
@@ -191,7 +185,8 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
             self.__search_window.set_icon_from_file(
                     rb.find_plugin_file(self, "music.png")
                     )
-            self.__search_window.connect("delete_event", lambda w, e: w.hide() or True)
+            self.__search_window.connect("delete_event",
+                    lambda w, e: w.hide() or True)
 
             builder.connect_signals(
                     SearchHandle(

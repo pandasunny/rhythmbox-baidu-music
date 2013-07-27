@@ -1,0 +1,175 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: rhythmbox-baidu-music\n"
+"POT-Creation-Date: 2013-07-26 19:24+0800\n"
+"PO-Revision-Date: 2013-07-27 00:46+0800\n"
+"Last-Translator: pandasunny <pandasunny@gmail.com>\n"
+"Language-Team: pandasunny <pandasunny@gmail.com>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 1.5.4\n"
+"X-Poedit-KeywordsList: _;gettext;gettext_noop\n"
+"X-Poedit-Basepath: .\n"
+"X-Poedit-SearchPath-0: /home/sunny/workspace/rhythmbox-baidu-music\n"
+
+#: /home/sunny/workspace/rhythmbox-baidu-music/baidu-music.py:69
+msgid "Baidu Music"
+msgstr "百度音乐"
+
+#: /home/sunny/workspace/rhythmbox-baidu-music/baidu-music.py:104
+#: /home/sunny/workspace/rhythmbox-baidu-music/search.ui:65
+msgid "Search"
+msgstr "搜索"
+
+#: /home/sunny/workspace/rhythmbox-baidu-music/baidu-music.py:105
+msgid "Search music from the baidu music."
+msgstr "从百度音乐种搜索音乐"
+
+#: /home/sunny/workspace/rhythmbox-baidu-music/baidu-music.py:114
+#: /home/sunny/workspace/rhythmbox-baidu-music/baidu-music.py:232
+msgid "Logout"
+msgstr "注销"
+
+#: /home/sunny/workspace/rhythmbox-baidu-music/baidu-music.py:115
+#: /home/sunny/workspace/rhythmbox-baidu-music/baidu-music.py:233
+msgid "Sign out the baidu music."
+msgstr "从百度音乐中退出"
+
+#: /home/sunny/workspace/rhythmbox-baidu-music/baidu-music.py:121
+#: /home/sunny/workspace/rhythmbox-baidu-music/baidu-music.py:216
+#: /home/sunny/workspace/rhythmbox-baidu-music/dialog.py:9
+msgid "Login"
+msgstr "登录"
+
+#: /home/sunny/workspace/rhythmbox-baidu-music/baidu-music.py:122
+#: /home/sunny/workspace/rhythmbox-baidu-music/baidu-music.py:217
+msgid "Sign in the baidu music."
+msgstr "登录到百度音乐"
+
+#: /home/sunny/workspace/rhythmbox-baidu-music/baidu-music.py:130
+msgid "Synchronize"
+msgstr "同步"
+
+#: /home/sunny/workspace/rhythmbox-baidu-music/baidu-music.py:131
+msgid "Synchronize data."
+msgstr "同步数据."
+
+#: /home/sunny/workspace/rhythmbox-baidu-music/baidu-music.py:139
+#: /home/sunny/workspace/rhythmbox-baidu-music/baidu-music.py:140
+msgid "Test"
+msgstr "测试"
+
+#: /home/sunny/workspace/rhythmbox-baidu-music/baidu-music.py:207
+msgid "Logout confirm"
+msgstr "注销确认"
+
+#: /home/sunny/workspace/rhythmbox-baidu-music/baidu-music.py:208
+msgid "Are you sure you want to logout?"
+msgstr "你确定要退出吗？"
+
+#: /home/sunny/workspace/rhythmbox-baidu-music/search.py:99
+#: /home/sunny/workspace/rhythmbox-baidu-music/search.ui:176
+msgid "Select All"
+msgstr "选择全部"
+
+#: /home/sunny/workspace/rhythmbox-baidu-music/search.py:101
+#: /home/sunny/workspace/rhythmbox-baidu-music/search.ui:175
+msgid "Select all songs which can be selected."
+msgstr "选择所有可以被选择的歌曲"
+
+#: /home/sunny/workspace/rhythmbox-baidu-music/search.py:108
+msgid "Reject All"
+msgstr "放弃所有"
+
+#: /home/sunny/workspace/rhythmbox-baidu-music/search.py:110
+msgid "Reject all songs which be selected."
+msgstr "放弃所有被选择的歌曲"
+
+#: /home/sunny/workspace/rhythmbox-baidu-music/dialog.py:15
+msgid "Username:"
+msgstr "用户名:"
+
+#: /home/sunny/workspace/rhythmbox-baidu-music/dialog.py:16
+msgid "Password:"
+msgstr "密码:"
+
+#: /home/sunny/workspace/rhythmbox-baidu-music/dialog.py:24
+msgid "Sign up"
+msgstr "注册"
+
+#: /home/sunny/workspace/rhythmbox-baidu-music/dialog.py:31
+msgid "Forgot?"
+msgstr "忘记？"
+
+#: /home/sunny/workspace/rhythmbox-baidu-music/source.py:172
+msgid "Loading song IDs..."
+msgstr "载入歌曲ID..."
+
+#: /home/sunny/workspace/rhythmbox-baidu-music/source.py:195
+msgid "Loading song list..."
+msgstr "载入歌曲列表..."
+
+#: /home/sunny/workspace/rhythmbox-baidu-music/search.ui:29
+msgid "Search Music"
+msgstr "搜索音乐"
+
+#: /home/sunny/workspace/rhythmbox-baidu-music/search.ui:121
+msgid "Title"
+msgstr "标题"
+
+#: /home/sunny/workspace/rhythmbox-baidu-music/search.ui:134
+msgid "Artist"
+msgstr "艺人"
+
+#: /home/sunny/workspace/rhythmbox-baidu-music/search.ui:147
+msgid "Album"
+msgstr "专辑"
+
+#: /home/sunny/workspace/rhythmbox-baidu-music/search.ui:190
+msgid "Collect all selected songs."
+msgstr "收藏所有选择的歌曲"
+
+#: /home/sunny/workspace/rhythmbox-baidu-music/search.ui:191
+msgid "Collect"
+msgstr "收藏"
+
+#: /home/sunny/workspace/rhythmbox-baidu-music/search.ui:215
+msgid "Go to the first page."
+msgstr "去到第一页"
+
+#: /home/sunny/workspace/rhythmbox-baidu-music/search.ui:216
+msgid "First"
+msgstr "首页"
+
+#: /home/sunny/workspace/rhythmbox-baidu-music/search.ui:230
+msgid "Go to the back page."
+msgstr "去到后一页"
+
+#: /home/sunny/workspace/rhythmbox-baidu-music/search.ui:231
+msgid "Back"
+msgstr "后退"
+
+#: /home/sunny/workspace/rhythmbox-baidu-music/search.ui:245
+msgid "Go to the next page."
+msgstr "去到下一页"
+
+#: /home/sunny/workspace/rhythmbox-baidu-music/search.ui:246
+msgid "Forward"
+msgstr "前进"
+
+#: /home/sunny/workspace/rhythmbox-baidu-music/search.ui:260
+msgid "Go to the last page."
+msgstr "去到末一页"
+
+#: /home/sunny/workspace/rhythmbox-baidu-music/search.ui:261
+msgid "Last"
+msgstr "末页"
+
+#: /home/sunny/workspace/rhythmbox-baidu-music/search.ui:284
+msgid "Total /"
+msgstr "总共 /"
+
+#: /home/sunny/workspace/rhythmbox-baidu-music/search.ui:317
+msgid "Go"
+msgstr "转到"
