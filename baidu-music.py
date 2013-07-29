@@ -75,22 +75,38 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
         # Add icon to the collect source
         theme = Gtk.IconTheme.get_default()
         what, width, height = Gtk.icon_size_lookup(Gtk.IconSize.LARGE_TOOLBAR)
-        icon = GdkPixbuf.Pixbuf.new_from_file_at_size(
+
+        # create a page group
+        baidu_icon = GdkPixbuf.Pixbuf.new_from_file_at_size(
                 rb.find_plugin_file(self, "music.png"), width, height)
+
+        page_group = RB.DisplayPageGroup(
+                shell=shell,
+                id="baidu-music",
+                name=_("Baidu Music"),
+                pixbuf=baidu_icon,
+                #category=RB.DisplayPageGroupCategory.TRANSIENT
+                )
+        shell.append_display_page(page_group,
+                RB.DisplayPageGroup.get_by_id("library"))
+
+        # create the collect source
+        collect_icon = GdkPixbuf.Pixbuf.new_from_file_at_size(
+                rb.find_plugin_file(self, "favorite.png"), width, height)
 
         self.source = GObject.new(
                 BaiduMusicSource,
-                name=_("Baidu Music"),
+                name=_("Collect"),
                 shell=shell,
                 plugin=self,
                 entry_type=self.entry_type,
                 query_model=self.query_model,
-                pixbuf=icon,
                 settings=self.settings.get_child("source"),
                 toolbar_path="/SourceToolbar",
+                is_local=False,
                 )
-        shell.append_display_page(self.source,
-                RB.DisplayPageGroup.get_by_id("library"))
+        self.source.set_property("pixbuf", collect_icon)
+        shell.append_display_page(self.source, page_group)
         shell.register_entry_type_for_source(self.source, self.entry_type)
 
         # init the api class
