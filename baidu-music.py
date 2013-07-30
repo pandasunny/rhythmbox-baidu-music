@@ -30,7 +30,7 @@ from gi.repository import Gtk
 from gi.repository import GdkPixbuf
 
 from client import Client
-from source import BaiduMusicSource
+from source import CollectSource
 from search import SearchHandle
 from dialog import LoginDialog
 
@@ -70,7 +70,43 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
         self.entry_type = BaiduMusicEntryType(self.db)
         self.db.register_entry_type(self.entry_type)
 
-        self.query_model = RB.RhythmDBQueryModel.new_empty(self.db)
+        self.__set_sources()
+        self.__set_client()
+        self.__set_ui_manager()
+
+        self.__search_window = None
+
+    def do_deactivate(self):
+        print "Baidu Music Plugin is deactivated"
+
+        shell = self.object
+
+        # remove the ui toolbar
+        manager = shell.props.ui_manager
+        manager.remove_ui(self.ui_id)
+        manager.remove_action_group(self.action_group)
+        self.ui_id = None
+        self.action_group = None
+
+        if self.__search_window:
+            self.__search_window.destroy()
+            self.__search_window = None
+        #self.db.entry_delete_by_type(self.entry_type)
+        #self.db.commit()
+
+        # delete the source
+        self.source.delete_thyself()
+        self.source = None
+
+        self.db = None
+        self.entry_type = None
+
+        self.settings = None
+        self.client = None
+
+    def __set_sources(self):
+
+        shell = self.object
 
         # Add icon to the collect source
         theme = Gtk.IconTheme.get_default()
@@ -85,35 +121,33 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
                 id="baidu-music",
                 name=_("Baidu Music"),
                 pixbuf=baidu_icon,
-                #category=RB.DisplayPageGroupCategory.TRANSIENT
+                category=RB.DisplayPageGroupType.TRANSIENT,
                 )
         shell.append_display_page(page_group,
-                RB.DisplayPageGroup.get_by_id("library"))
+                RB.DisplayPageGroup.get_by_id("stores"))
 
         # create the collect source
-        collect_icon = GdkPixbuf.Pixbuf.new_from_file_at_size(
-                rb.find_plugin_file(self, "favorite.png"), width, height)
-
         self.source = GObject.new(
-                BaiduMusicSource,
+                CollectSource,
                 name=_("Collect"),
                 shell=shell,
                 plugin=self,
                 entry_type=self.entry_type,
-                query_model=self.query_model,
                 settings=self.settings.get_child("source"),
                 toolbar_path="/SourceToolbar",
-                is_local=False,
+                #is_local=False,
                 )
-        self.source.set_property("pixbuf", collect_icon)
         shell.append_display_page(self.source, page_group)
-        shell.register_entry_type_for_source(self.source, self.entry_type)
+        #shell.register_entry_type_for_source(self.source, self.entry_type)
+
+    def __set_client(self):
 
         # init the api class
         cache_dir = RB.find_user_cache_file("baidu-music")
         if not os.path.isdir(cache_dir):
             os.mkdir(cache_dir)
         cookie =  RB.find_user_cache_file("baidu-music/cookie")
+
         self.client = Client(cookie, debug=False)
         username = self.settings.get_string("username")
         password = self.settings.get_string("password")
@@ -126,6 +160,10 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
 
         self.source.client = self.client
         self.entry_type.client = self.client
+
+    def __set_ui_manager(self):
+
+        shell = self.object
 
         # setup the menu in the source
         manager = shell.props.ui_manager
@@ -178,37 +216,6 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
 
         manager.insert_action_group(self.action_group, 0)
         manager.ensure_update()
-
-        self.__search_window = None
-
-    def do_deactivate(self):
-        print "Baidu Music Plugin is deactivated"
-
-        shell = self.object
-
-        # remove the ui toolbar
-        manager = shell.props.ui_manager
-        manager.remove_ui(self.ui_id)
-        manager.remove_action_group(self.action_group)
-        self.ui_id = None
-        self.action_group = None
-
-        if self.__search_window:
-            self.__search_window.destroy()
-            self.__search_window = None
-        #self.db.entry_delete_by_type(self.entry_type)
-        #self.db.commit()
-
-        # delete the source
-        self.source.delete_thyself()
-        self.source = None
-
-        self.db = None
-        self.query_model = None
-        self.entry_type = None
-
-        self.settings = None
-        self.client = None
 
     def __search_music(self, widget):
 
@@ -275,7 +282,6 @@ class BaiduMusicEntryType(RB.RhythmDBEntryType):
         super(BaiduMusicEntryType, self).__init__(
                 db=db,
                 name="baidu-music-entry-type",
-                #has-playlists=False
                 )
         self.settings = Gio.Settings("org.gnome.rhythmbox.plugins.baidu-music")
         self.client = None
