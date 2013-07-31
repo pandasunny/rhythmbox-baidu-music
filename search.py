@@ -22,9 +22,10 @@
 
 class SearchHandle(object):
 
-    def __init__(self, builder, source, client):
+    def __init__(self, builder, collect_source, client, temp_source):
 
-        self.__source = source
+        self.__collect_source = collect_source
+        self.__temp_source = temp_source
         self.__client = client
         self.__builder = builder
 
@@ -162,8 +163,15 @@ class SearchHandle(object):
 
     def on_collect(self, widget):
         songs = self.__client.add_favorite_songs(self.__song_ids)
+        if self.__collect_source.activated and songs:
+            self.__collect_source.add(songs)
+
+    def on_play(self, widget):
+        song_ids = [song_id for song_id in self.__song_ids \
+                if song_id not in self.__temp_source.songs]
+        songs = self.__client.get_song_info(song_ids)
         if songs:
-            self.__source.add(songs)
+            self.__temp_source.add(songs)
 
     def on_goto(self, widget):
         self.__page_spinbutton.update()

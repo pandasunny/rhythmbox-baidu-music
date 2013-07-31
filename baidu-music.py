@@ -145,7 +145,7 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
                 plugin=self,
                 entry_type=self.entry_type,
                 settings=self.settings.get_child("source"),
-                #toolbar_path="/TempSourceToolbar",
+                toolbar_path="/TempSourceToolbar",
                 is_local=False,
                 )
         shell.append_display_page(self.temp_source, page_group)
@@ -158,7 +158,7 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
                 plugin=self,
                 entry_type=self.entry_type,
                 settings=self.settings.get_child("source"),
-                toolbar_path="/SourceToolbar",
+                toolbar_path="/CollectSourceToolbar",
                 is_local=False,
                 )
         shell.append_display_page(self.collect_source, page_group)
@@ -267,7 +267,8 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
             builder.connect_signals(
                     SearchHandle(
                         builder = builder,
-                        source = self.collect_source,
+                        collect_source = self.collect_source,
+                        temp_source = self.temp_source,
                         client = self.client
                         )
                     )

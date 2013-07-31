@@ -184,6 +184,21 @@
               </packing>
             </child>
             <child>
+              <object class="GtkToolButton" id="play_button">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="tooltip_text" translatable="yes">Collect all selected songs.</property>
+                <property name="label" translatable="yes">Play</property>
+                <property name="use_underline">True</property>
+                <property name="icon_name">media-playback-start</property>
+                <signal name="clicked" handler="on_play" swapped="no"/>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="homogeneous">True</property>
+              </packing>
+            </child>
+            <child>
               <object class="GtkToolButton" id="collect_button">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>

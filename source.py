@@ -334,9 +334,12 @@ class TempSource(BaseSource):
             if not os.path.isfile(self.__playlist):
                 os.mknod(self.__playlist)
             else:
-                song_ids = pickle.load(open(self.__playlist, "rb"))
-                songs = self.get_songs(song_ids)
-                self.add(songs)
+                try:
+                    song_ids = pickle.load(open(self.__playlist, "rb"))
+                    songs = self.get_songs(song_ids)
+                    self.add(songs)
+                except Exception, e:
+                    pass
 
             self.activated = True
 
