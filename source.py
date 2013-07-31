@@ -20,11 +20,15 @@
 """
 
 from __future__ import division
+
+import os
+import cPickle as pickle
 import threading
 
 from gi.repository import GObject
 from gi.repository import GLib
 from gi.repository import Gdk
+from gi.repository import Gtk
 from gi.repository import RB
 
 DELTA = 200
@@ -316,4 +320,48 @@ class CollectSource(BaseSource):
             self.remove_entry(entry)
 
 
+class TempSource(BaseSource):
+
+    def __init__(self):
+        super(TempSource, self).__init__()
+
+    def do_selected(self):
+        if not self.activated:
+
+            self.set_entry_view()
+
+            self.__playlist =  RB.find_user_cache_file("baidu-music/temp.pls")
+            if not os.path.isfile(self.__playlist):
+                os.mknod(self.__playlist)
+            else:
+                song_ids = pickle.load(open(self.__playlist, "rb"))
+                songs = self.get_songs(song_ids)
+                self.add(songs)
+
+            self.activated = True
+
+    def do_impl_delete(self):
+        entries = self.get_entry_view().get_selected_entries()
+        for entry in entries:
+            self.remove_entry(entry)
+            song_id = int(entry.get_string(RB.RhythmDBPropType.LOCATION))
+            self.songs.remove(song_id)
+        self.__save()
+
+    def add(self, songs):
+        """ Create entries with songs.
+
+        Args:
+            songs: A list includes songs.
+        """
+        if songs:
+            self.songs.extend([int(song["songId"]) for song in songs])
+            self.add_songs(songs, -1)
+            self.__save()
+
+    def __save(self):
+        pickle.dump(self.songs, open(self.__playlist, "wb"))
+
+
 GObject.type_register(CollectSource)
+GObject.type_register(TempSource)

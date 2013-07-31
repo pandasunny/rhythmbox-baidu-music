@@ -32,6 +32,7 @@ from gi.repository import GdkPixbuf
 from client import Client
 from source import BaseSource
 from source import CollectSource
+from source import TempSource
 from search import SearchHandle
 from dialog import LoginDialog
 
@@ -42,13 +43,22 @@ gettext.install(APPNAME, RB.locale_dir())
 
 POPUP_UI = """
 <ui>
-  <toolbar name="SourceToolbar">
+  <toolbar name="CollectSourceToolbar">
     <toolitem name="BaiduMusicLogin" action="BaiduMusicLoginAction"/>
     <toolitem name="Browse" action="ViewBrowser"/>
     <toolitem name="BaiduMusicSearch" action="BaiduMusicSearchAction"/>
     <toolitem name="BaiduMusicSync" action="BaiduMusicSyncAction"/>
     <!-- <toolitem name="BaiduMusicTest" action="BaiduMusicTestAction"/> -->
   </toolbar>
+  <toolbar name="TempSourceToolbar">
+    <toolitem name="Browse" action="ViewBrowser"/>
+    <toolitem name="BaiduMusicSearch" action="BaiduMusicSearchAction"/>
+    <toolitem name="BaiduMusicCollect" action="BaiduMusicCollectAction"/>
+    <!-- <toolitem name="BaiduMusicTest" action="BaiduMusicTestAction"/> -->
+  </toolbar>
+  <popup name="CollectSourcePopup">
+    <menuitem name="BaiduMusicSync" action="BaiduMusicSyncAction"/>
+  </popup>
 </ui>
 """
 
@@ -126,6 +136,19 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
                 )
         shell.append_display_page(page_group,
                 RB.DisplayPageGroup.get_by_id("stores"))
+
+        # create the temp source
+        self.temp_source = GObject.new(
+                TempSource,
+                name=_("Temporary"),
+                shell=shell,
+                plugin=self,
+                entry_type=self.entry_type,
+                settings=self.settings.get_child("source"),
+                #toolbar_path="/TempSourceToolbar",
+                is_local=False,
+                )
+        shell.append_display_page(self.temp_source, page_group)
 
         # create the collect source
         self.collect_source = GObject.new(
@@ -215,6 +238,15 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
         action.connect("activate", lambda a: shell.props.selected_page.test())
         self.action_group.add_action(action)
 
+        action = Gtk.Action(
+                name="BaiduMusicCollectAction",
+                label=_("Collect"),
+                tooltip=_("Collect all selected songs."),
+                stock_id=None
+                )
+        action.connect("activate", self.__collect_songs)
+        self.action_group.add_action(action)
+
         manager.insert_action_group(self.action_group, 0)
         manager.ensure_update()
 
@@ -276,6 +308,15 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
                 except Exception as e:
                     print e
 
+    def __collect_songs(self, widget):
+        shell = self.object
+        entry_view = shell.props.selected_page.get_entry_view()
+        entries = entry_view.get_selected_entries()
+        song_ids = [int(entry.get_string(RB.RhythmDBPropType.LOCATION)) \
+                for entry in entries]
+        songs = self.client.add_favorite_songs(song_ids)
+        if self.collect_source.activated and songs:
+            self.collect_source.add(songs)
 
 class BaiduMusicEntryType(RB.RhythmDBEntryType):
 
