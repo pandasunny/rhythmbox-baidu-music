@@ -30,6 +30,7 @@ from gi.repository import Gtk
 from gi.repository import GdkPixbuf
 
 from client import Client
+from source import BaseSource
 from source import CollectSource
 from search import SearchHandle
 from dialog import LoginDialog
@@ -95,8 +96,8 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
         #self.db.commit()
 
         # delete the source
-        self.source.delete_thyself()
-        self.source = None
+        self.collect_source.delete_thyself()
+        self.collect_source = None
 
         self.db = None
         self.entry_type = None
@@ -127,7 +128,7 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
                 RB.DisplayPageGroup.get_by_id("stores"))
 
         # create the collect source
-        self.source = GObject.new(
+        self.collect_source = GObject.new(
                 CollectSource,
                 name=_("Collect"),
                 shell=shell,
@@ -135,10 +136,10 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
                 entry_type=self.entry_type,
                 settings=self.settings.get_child("source"),
                 toolbar_path="/SourceToolbar",
-                #is_local=False,
+                is_local=False,
                 )
-        shell.append_display_page(self.source, page_group)
-        #shell.register_entry_type_for_source(self.source, self.entry_type)
+        shell.append_display_page(self.collect_source, page_group)
+        #shell.register_entry_type_for_source(self.collect_source, self.entry_type)
 
     def __set_client(self):
 
@@ -158,7 +159,7 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
                 self.settings["username"] = ""
                 self.settings["password"] = ""
 
-        self.source.client = self.client
+        BaseSource.client = self.client
         self.entry_type.client = self.client
 
     def __set_ui_manager(self):
@@ -234,7 +235,7 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
             builder.connect_signals(
                     SearchHandle(
                         builder = builder,
-                        source = self.source,
+                        source = self.collect_source,
                         client = self.client
                         )
                     )
@@ -253,7 +254,7 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
                 if not self.client.islogin:
                     self.settings["username"] = ""
                     self.settings["password"] = ""
-                    self.source.clear()
+                    self.collect_source.clear()
                     widget.set_label(_("Login"))
                     widget.set_tooltip(_("Sign in the baidu music."))
             dialog.destroy()
@@ -269,7 +270,7 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
                     self.settings["username"] = username
                     self.settings["password"] = password
                     dialog.destroy()
-                    self.source.load()
+                    self.collect_source.load()
                     widget.set_label(_("Logout"))
                     widget.set_tooltip(_("Sign out the baidu music."))
                 except Exception as e:
