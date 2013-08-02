@@ -151,6 +151,8 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
         shell.append_display_page(self.temp_source, page_group)
 
         # create the collect source
+        collect_icon = GdkPixbuf.Pixbuf.new_from_file_at_size(
+                rb.find_plugin_file(self, "favorite.png"), width, height)
         self.collect_source = GObject.new(
                 CollectSource,
                 name=_("Collect"),
@@ -161,6 +163,7 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
                 toolbar_path="/CollectSourceToolbar",
                 is_local=False,
                 )
+        self.collect_source.set_property("pixbuf", collect_icon)
         shell.append_display_page(self.collect_source, page_group)
         #shell.register_entry_type_for_source(self.collect_source, self.entry_type)
 
