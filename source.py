@@ -44,6 +44,7 @@ class BaseSource(RB.StaticPlaylistSource):
 
         self.songs = []
         self.activated = False
+        self.popup = None
 
         # get_status function
         self.updating = False
@@ -62,6 +63,11 @@ class BaseSource(RB.StaticPlaylistSource):
             self.set_entry_view()
             # setup the source's status
             self.activated = True
+
+    def do_show_popup(self):
+        if self.activate and self.popup:
+            self.popup.popup(None, None, None, None,
+                    3, Gtk.get_current_event_time())
 
     def do_get_status(self, status, progress_text, progress):
         progress_text = None
@@ -207,6 +213,9 @@ class CollectSource(BaseSource):
 
     def do_selected(self):
         if not self.activated:
+
+            shell = self.props.shell
+            self.popup = shell.props.ui_manager.get_widget("/CollectSourcePopup")
 
             self.set_entry_view()
 
