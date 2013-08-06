@@ -99,16 +99,18 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
         self.ui_id = None
         self.action_group = None
 
+        # remove the search window
         if self.__search_window:
             self.__search_window.destroy()
             self.__search_window = None
-        #self.db.entry_delete_by_type(self.entry_type)
-        #self.db.commit()
 
-        # delete the source
+        # delete sources
         self.collect_source.delete_thyself()
         self.collect_source = None
+        self.temp_source.delete_thyself()
+        self.temp_source = None
 
+        # delete some variables
         self.db = None
         self.entry_type = None
 
@@ -197,6 +199,7 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
         self.ui_id = manager.add_ui_from_string(POPUP_UI)
         self.action_group = Gtk.ActionGroup(name="BaiduMusicPluginActions")
 
+        # the search action
         action = Gtk.Action(
                 name="BaiduMusicSearchAction",
                 label=_("Search"),
@@ -206,6 +209,7 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
         action.connect("activate", self.__search_music)
         self.action_group.add_action(action)
 
+        # the login action
         if self.client.islogin:
             action = Gtk.Action(
                     name="BaiduMusicLoginAction",
@@ -223,6 +227,7 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
         action.connect("activate", self.__login_action)
         self.action_group.add_action(action)
 
+        # the sync action
         action = Gtk.Action(
                 name="BaiduMusicSyncAction",
                 label=_("Synchronize"),
@@ -232,6 +237,7 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
         action.connect("activate", lambda a: shell.props.selected_page.sync())
         self.action_group.add_action(action)
 
+        # the test action
         action = Gtk.Action(
                 name="BaiduMusicTestAction",
                 label=_("Test"),
@@ -241,6 +247,7 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
         action.connect("activate", lambda a: shell.props.selected_page.test())
         self.action_group.add_action(action)
 
+        # the collect action
         action = Gtk.Action(
                 name="BaiduMusicCollectAction",
                 label=_("Collect"),
@@ -351,6 +358,7 @@ class BaiduMusicEntryType(RB.RhythmDBEntryType):
             with open(os.path.join(path, filename), "wb") as lyric:
                 lyric.write(data)
                 lyric.close()
+
         if song["lrcLink"]:
             loader =  rb.Loader()
             loader.get_url(song["lrcLink"], save_lyric_cb)

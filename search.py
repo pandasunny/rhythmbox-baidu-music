@@ -60,7 +60,7 @@ class SearchHandle(object):
             self.__page_spinbutton.set_sensitive(True)
 
         all_buttons = [
-                "select_all", "collect", "goto",
+                "select_all", "collect", "goto", "play"
                 "first", "back", "forward", "last"
                 ]
         enable_buttons = [btn for btn in all_buttons if btn not in buttons]

@@ -36,20 +36,20 @@ DELTA = 200
 
 class BaseSource(RB.StaticPlaylistSource):
 
-    albumart = {}
-    client = None
+    albumart = {}   # the coverart dict
+    client = None   # the client API
 
     def __init__(self):
         super(BaseSource, self).__init__()
 
-        self.songs = []
-        self.activated = False
-        self.popup = None
+        self.songs = []             # the song ids in this source
+        self.activated = False      # the tag of activate
+        self.popup = None           # the popup menu
 
         # get_status function
-        self.updating = False
-        self.status = ""
-        self.progress = 0
+        self.updating = False       # the status of update
+        self.status = ""            # the message of source's status
+        self.progress = 0           # the progress of update
 
         # set up the coverart
         self.__art_store = RB.ExtDB(name="album-art")
@@ -59,7 +59,6 @@ class BaseSource(RB.StaticPlaylistSource):
 
     def do_selected(self):
         if not self.activated:
-
             self.set_entry_view()
             # setup the source's status
             self.activated = True
@@ -103,15 +102,20 @@ class BaseSource(RB.StaticPlaylistSource):
 
     def do_delete_thyself(self):
 
+        # clean up the coverart function
         self.__art_store.disconnect(self.__req_id)
         self.__req_id = None
         self.__art_store = None
 
+        # delete the variables
         self.songs = None
+        self.popup = None
 
         RB.StaticPlaylistSource.delete_thyself(self)
 
     def __album_art_requested(self, store, key, last_time):
+        """ Get the coverart of song. """
+
         album = key.get_field("album").decode("utf-8")
         artist = key.get_field("artist").decode("utf-8")
         uri = self.albumart[artist+album] \
@@ -127,6 +131,7 @@ class BaseSource(RB.StaticPlaylistSource):
 
         Args:
             songs: A list includes all songs.
+            index: the index position of song.
         """
         if not songs:
             return False
@@ -135,6 +140,7 @@ class BaseSource(RB.StaticPlaylistSource):
 
         for song in songs:
             try:
+                # create and add a entry
                 entry = RB.RhythmDBEntry.new(
                         db, self.props.entry_type, song["songId"]
                         )
@@ -151,6 +157,8 @@ class BaseSource(RB.StaticPlaylistSource):
                         song["albumName"].encode("utf-8")
                         )
                 self.add_entry(entry, index)
+
+                # setup the coverart uri
                 if song["songPicBig"]:
                     albumart = song["songPicBig"]
                 elif song["songPicRadio"]:
@@ -166,7 +174,11 @@ class BaseSource(RB.StaticPlaylistSource):
         db.commit()
 
     def add_songs(self, *args):
+        """ The wrap of __add_songs function.
 
+        Args:
+            args: A list includes all args.
+        """
         Gdk.threads_add_idle(
                 GLib.PRIORITY_DEFAULT_IDLE,
                 lambda args: self.__add_songs(*args),
@@ -174,6 +186,7 @@ class BaseSource(RB.StaticPlaylistSource):
                 )
 
     def set_entry_view(self):
+        """ Setup the entry view of this source. """
         ev = self.get_entry_view()
         ev.get_column(RB.EntryViewColumn.TRACK_NUMBER).set_visible(False)
         ev.get_column(RB.EntryViewColumn.GENRE).set_visible(False)
@@ -199,6 +212,7 @@ class BaseSource(RB.StaticPlaylistSource):
         return songs
 
     def test(self):
+        """ Show the entries' informations in console. """
         qm = self.get_query_model()
         for row in qm:
             entry = row[0]
@@ -214,6 +228,7 @@ class CollectSource(BaseSource):
     def do_selected(self):
         if not self.activated:
 
+            # setup the popup menu
             shell = self.props.shell
             self.popup = shell.props.ui_manager.get_widget("/CollectSourcePopup")
 
@@ -229,14 +244,11 @@ class CollectSource(BaseSource):
         entries = self.get_entry_view().get_selected_entries()
         song_ids = [int(entry.dup_string(RB.RhythmDBPropType.LOCATION)) \
                 for entry in entries]
+        # remove songs in the favorite list
         if self.client.remove_favorite_songs(song_ids):
             for entry in entries:
                 self.remove_entry(entry)
                 self.songs = filter(lambda x: x not in song_ids, self.songs)
-
-    def do_delete_thyself(self):
-        self.songs = None
-        BaseSource.delete_thyself(self)
 
     def __get_song_ids(self):
         """ Get all ids of songs from baidu music.
@@ -269,7 +281,6 @@ class CollectSource(BaseSource):
 
     def load(self):
         """ The thread function of load all songs. """
-        #Gdk.threads_add_idle(GLib.PRIORITY_DEFAULT_IDLE, self.__load_cb, [])
         thread = threading.Thread(target=self.__load_cb)
         thread.start()
 
@@ -322,7 +333,7 @@ class CollectSource(BaseSource):
             self.add_songs(songs, 0)
 
     def clear(self):
-        """ Clear all entries in the source. """
+        """ Clear all entries in this source. """
         qm = self.get_query_model()
         for row in qm:
             entry = row[0]
@@ -372,6 +383,7 @@ class TempSource(BaseSource):
             self.__save()
 
     def __save(self):
+        """ Save all entries in a playlist. """
         pickle.dump(self.songs, open(self.__playlist, "wb"))
 
 
