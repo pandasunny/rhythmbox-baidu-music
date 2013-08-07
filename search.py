@@ -46,7 +46,7 @@ class SearchHandle(object):
     def __check_buttons_status(self):
         buttons = []
         if not self.__song_ids:
-            buttons.append("collect")
+            buttons.extend(["collect", "play"])
         if self.__current_page <= 1:
             buttons.extend(["first", "back"])
         if self.__current_page == self.__last_page:
@@ -60,7 +60,7 @@ class SearchHandle(object):
             self.__page_spinbutton.set_sensitive(True)
 
         all_buttons = [
-                "select_all", "collect", "goto", "play"
+                "select_all", "collect", "goto", "play",
                 "first", "back", "forward", "last"
                 ]
         enable_buttons = [btn for btn in all_buttons if btn not in buttons]
