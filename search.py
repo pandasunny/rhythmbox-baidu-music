@@ -24,17 +24,20 @@ class SearchHandle(object):
 
     def __init__(self, builder, collect_source, client, temp_source):
 
+        # the basic objects
         self.__collect_source = collect_source
         self.__temp_source = temp_source
         self.__client = client
         self.__builder = builder
 
+        # the widgets
         self.__liststore = builder.get_object("liststore")
         self.__search_entry = builder.get_object("search_entry")
         self.__page_spinbutton = builder.get_object("page_spinbutton")
         self.__page_adjustment = builder.get_object("page_adjustment")
         self.__total_lable = builder.get_object("total_label")
 
+        # the basic variables
         self.__song_ids = []
         self.__keyword = ""
         self.__current_page = 0
@@ -44,6 +47,8 @@ class SearchHandle(object):
         self.__check_buttons_status()
 
     def __check_buttons_status(self):
+        """ check the status of all buttons. """
+
         buttons = []
         if not self.__song_ids:
             buttons.extend(["collect", "play"])
@@ -70,6 +75,7 @@ class SearchHandle(object):
             self.__builder.get_object(btn+"_button").set_sensitive(False)
 
     def __refresh(self, songs):
+        """ Refresh the liststore of view. """
         self.__liststore.clear()
         for song in songs["songs"]:
             self.__liststore.append([
@@ -90,6 +96,7 @@ class SearchHandle(object):
         self.__check_buttons_status()
 
     def on_search(self, widget):
+        """ Search the keywords of entry. """
         self.__keyword = self.__search_entry.get_text().strip()
         if self.__keyword:
             result = self.__client.search(self.__keyword)
@@ -97,6 +104,7 @@ class SearchHandle(object):
         self.__check_buttons_status()
 
     def on_toggled(self, widget, path):
+        """ Toggle the status of select. """
         self.__liststore[path][0] = not self.__liststore[path][0]
         song_id = self.__liststore[path][1]
         if song_id in self.__song_ids:
@@ -112,6 +120,7 @@ class SearchHandle(object):
         self.__check_buttons_status()
 
     def on_select_all_toggled(self, widget):
+        """ Select all songs. """
         self.__song_ids = []
         if self.__select_all:
             for song in self.__liststore:
@@ -133,11 +142,13 @@ class SearchHandle(object):
         self.__check_buttons_status()
 
     def on_first(self, widget):
+        """ Go to the first page. """
         if self.__current_page > 1:
             result = self.__client.search(self.__keyword, 1)
             self.__refresh(result)
 
     def on_back(self, widget):
+        """ Go to the back page. """
         if self.__current_page > 1:
             result = self.__client.search(
                     self.__keyword,
@@ -146,6 +157,7 @@ class SearchHandle(object):
             self.__refresh(result)
 
     def on_forward(self, widget):
+        """ Go to the forward page. """
         if self.__current_page < self.__last_page:
             result = self.__client.search(
                     self.__keyword,
@@ -154,6 +166,7 @@ class SearchHandle(object):
             self.__refresh(result)
 
     def on_last(self, widget):
+        """ Go to the last page. """
         if self.__current_page < self.__last_page:
             result = self.__client.search(
                     self.__keyword,
@@ -162,11 +175,13 @@ class SearchHandle(object):
             self.__refresh(result)
 
     def on_collect(self, widget):
+        """ Collect all selected songs. """
         songs = self.__client.add_favorite_songs(self.__song_ids)
         if self.__collect_source.activated and songs:
             self.__collect_source.add(songs)
 
     def on_play(self, widget):
+        """ Play all selected songs. """
         song_ids = [song_id for song_id in self.__song_ids \
                 if song_id not in self.__temp_source.songs]
         songs = self.__client.get_song_info(song_ids)
@@ -174,6 +189,7 @@ class SearchHandle(object):
             self.__temp_source.add(songs)
 
     def on_goto(self, widget):
+        """ Go to the custom page. """
         self.__page_spinbutton.update()
         page = int(self.__page_spinbutton.get_value())
         if page <= self.__last_page:

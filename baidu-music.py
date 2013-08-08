@@ -150,6 +150,7 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
                 toolbar_path="/TempSourceToolbar",
                 is_local=False,
                 )
+        #self.temp_source.set_property("pixbuf", baidu_icon)
         shell.append_display_page(self.temp_source, page_group)
 
         # create the collect source
