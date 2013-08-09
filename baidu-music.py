@@ -126,20 +126,20 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
         what, width, height = Gtk.icon_size_lookup(Gtk.IconSize.LARGE_TOOLBAR)
 
         # create a page group
-        baidu_icon = GdkPixbuf.Pixbuf.new_from_file_at_size(
-                rb.find_plugin_file(self, "music.png"), width, height)
-
         page_group = RB.DisplayPageGroup(
                 shell=shell,
                 id="baidu-music",
                 name=_("Baidu Music"),
-                pixbuf=baidu_icon,
+                #pixbuf=baidu_icon,
                 category=RB.DisplayPageGroupType.TRANSIENT,
                 )
-        shell.append_display_page(page_group,
-                RB.DisplayPageGroup.get_by_id("stores"))
+        shell.append_display_page(page_group, None)
+                #RB.DisplayPageGroup.get_by_id("stores"))
 
         # create the temp source
+        baidu_icon = GdkPixbuf.Pixbuf.new_from_file_at_size(
+                rb.find_plugin_file(self, "music.png"), width, height)
+
         self.temp_source = GObject.new(
                 TempSource,
                 name=_("Temporary"),
@@ -150,7 +150,7 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
                 toolbar_path="/TempSourceToolbar",
                 is_local=False,
                 )
-        #self.temp_source.set_property("pixbuf", baidu_icon)
+        self.temp_source.set_property("pixbuf", baidu_icon)
         shell.append_display_page(self.temp_source, page_group)
 
         # create the collect source
@@ -158,7 +158,7 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
                 rb.find_plugin_file(self, "favorite.png"), width, height)
         self.collect_source = GObject.new(
                 CollectSource,
-                name=_("Collect"),
+                name=_("My Collect"),
                 shell=shell,
                 plugin=self,
                 entry_type=self.entry_type,

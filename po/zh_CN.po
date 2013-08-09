@@ -1,8 +1,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: rhythmbox-baidu-music\n"
-"POT-Creation-Date: 2013-07-26 19:24+0800\n"
-"PO-Revision-Date: 2013-07-27 00:46+0800\n"
+"POT-Creation-Date: 2013-08-09 12:16+0800\n"
+"PO-Revision-Date: 2013-08-09 12:16+0800\n"
 "Last-Translator: pandasunny <pandasunny@gmail.com>\n"
 "Language-Team: pandasunny <pandasunny@gmail.com>\n"
 "MIME-Version: 1.0\n"
@@ -13,102 +13,120 @@ msgstr ""
 "X-Poedit-Basepath: .\n"
 "X-Poedit-SearchPath-0: /home/sunny/workspace/rhythmbox-baidu-music\n"
 
-#: /home/sunny/workspace/rhythmbox-baidu-music/baidu-music.py:69
+#: /home/sunny/workspace/rhythmbox-baidu-music/baidu-music.py:132
 msgid "Baidu Music"
 msgstr "百度音乐"
 
-#: /home/sunny/workspace/rhythmbox-baidu-music/baidu-music.py:104
+#: /home/sunny/workspace/rhythmbox-baidu-music/baidu-music.py:145
+msgid "Temporary"
+msgstr "临时列表"
+
+#: /home/sunny/workspace/rhythmbox-baidu-music/baidu-music.py:161
+msgid "My Collect"
+msgstr "我的收藏"
+
+#: /home/sunny/workspace/rhythmbox-baidu-music/baidu-music.py:206
 #: /home/sunny/workspace/rhythmbox-baidu-music/search.ui:65
 msgid "Search"
 msgstr "搜索"
 
-#: /home/sunny/workspace/rhythmbox-baidu-music/baidu-music.py:105
+#: /home/sunny/workspace/rhythmbox-baidu-music/baidu-music.py:207
 msgid "Search music from the baidu music."
-msgstr "从百度音乐种搜索音乐"
+msgstr "从百度音乐中搜索音乐"
 
-#: /home/sunny/workspace/rhythmbox-baidu-music/baidu-music.py:114
-#: /home/sunny/workspace/rhythmbox-baidu-music/baidu-music.py:232
+#: /home/sunny/workspace/rhythmbox-baidu-music/baidu-music.py:217
+#: /home/sunny/workspace/rhythmbox-baidu-music/baidu-music.py:318
 msgid "Logout"
 msgstr "注销"
 
-#: /home/sunny/workspace/rhythmbox-baidu-music/baidu-music.py:115
-#: /home/sunny/workspace/rhythmbox-baidu-music/baidu-music.py:233
+#: /home/sunny/workspace/rhythmbox-baidu-music/baidu-music.py:218
+#: /home/sunny/workspace/rhythmbox-baidu-music/baidu-music.py:319
 msgid "Sign out the baidu music."
 msgstr "从百度音乐中退出"
 
-#: /home/sunny/workspace/rhythmbox-baidu-music/baidu-music.py:121
-#: /home/sunny/workspace/rhythmbox-baidu-music/baidu-music.py:216
-#: /home/sunny/workspace/rhythmbox-baidu-music/dialog.py:9
+#: /home/sunny/workspace/rhythmbox-baidu-music/baidu-music.py:224
+#: /home/sunny/workspace/rhythmbox-baidu-music/baidu-music.py:302
+#: /home/sunny/workspace/rhythmbox-baidu-music/dialog.py:29
 msgid "Login"
 msgstr "登录"
 
-#: /home/sunny/workspace/rhythmbox-baidu-music/baidu-music.py:122
-#: /home/sunny/workspace/rhythmbox-baidu-music/baidu-music.py:217
+#: /home/sunny/workspace/rhythmbox-baidu-music/baidu-music.py:225
+#: /home/sunny/workspace/rhythmbox-baidu-music/baidu-music.py:303
 msgid "Sign in the baidu music."
 msgstr "登录到百度音乐"
 
-#: /home/sunny/workspace/rhythmbox-baidu-music/baidu-music.py:130
+#: /home/sunny/workspace/rhythmbox-baidu-music/baidu-music.py:234
 msgid "Synchronize"
 msgstr "同步"
 
-#: /home/sunny/workspace/rhythmbox-baidu-music/baidu-music.py:131
+#: /home/sunny/workspace/rhythmbox-baidu-music/baidu-music.py:235
 msgid "Synchronize data."
 msgstr "同步数据."
 
-#: /home/sunny/workspace/rhythmbox-baidu-music/baidu-music.py:139
-#: /home/sunny/workspace/rhythmbox-baidu-music/baidu-music.py:140
+#: /home/sunny/workspace/rhythmbox-baidu-music/baidu-music.py:244
+#: /home/sunny/workspace/rhythmbox-baidu-music/baidu-music.py:245
 msgid "Test"
 msgstr "测试"
 
-#: /home/sunny/workspace/rhythmbox-baidu-music/baidu-music.py:207
+#: /home/sunny/workspace/rhythmbox-baidu-music/baidu-music.py:254
+#: /home/sunny/workspace/rhythmbox-baidu-music/search.ui:206
+msgid "Collect"
+msgstr "收藏"
+
+#: /home/sunny/workspace/rhythmbox-baidu-music/baidu-music.py:255
+#: /home/sunny/workspace/rhythmbox-baidu-music/search.ui:205
+msgid "Collect all selected songs."
+msgstr "收藏所有选择的歌曲"
+
+#: /home/sunny/workspace/rhythmbox-baidu-music/baidu-music.py:293
 msgid "Logout confirm"
 msgstr "注销确认"
 
-#: /home/sunny/workspace/rhythmbox-baidu-music/baidu-music.py:208
+#: /home/sunny/workspace/rhythmbox-baidu-music/baidu-music.py:294
 msgid "Are you sure you want to logout?"
 msgstr "你确定要退出吗？"
 
-#: /home/sunny/workspace/rhythmbox-baidu-music/search.py:99
+#: /home/sunny/workspace/rhythmbox-baidu-music/search.py:129
 #: /home/sunny/workspace/rhythmbox-baidu-music/search.ui:176
 msgid "Select All"
 msgstr "选择全部"
 
-#: /home/sunny/workspace/rhythmbox-baidu-music/search.py:101
+#: /home/sunny/workspace/rhythmbox-baidu-music/search.py:131
 #: /home/sunny/workspace/rhythmbox-baidu-music/search.ui:175
 msgid "Select all songs which can be selected."
 msgstr "选择所有可以被选择的歌曲"
 
-#: /home/sunny/workspace/rhythmbox-baidu-music/search.py:108
+#: /home/sunny/workspace/rhythmbox-baidu-music/search.py:138
 msgid "Reject All"
 msgstr "放弃所有"
 
-#: /home/sunny/workspace/rhythmbox-baidu-music/search.py:110
+#: /home/sunny/workspace/rhythmbox-baidu-music/search.py:140
 msgid "Reject all songs which be selected."
 msgstr "放弃所有被选择的歌曲"
 
-#: /home/sunny/workspace/rhythmbox-baidu-music/dialog.py:15
+#: /home/sunny/workspace/rhythmbox-baidu-music/dialog.py:35
 msgid "Username:"
 msgstr "用户名:"
 
-#: /home/sunny/workspace/rhythmbox-baidu-music/dialog.py:16
+#: /home/sunny/workspace/rhythmbox-baidu-music/dialog.py:36
 msgid "Password:"
 msgstr "密码:"
 
-#: /home/sunny/workspace/rhythmbox-baidu-music/dialog.py:24
+#: /home/sunny/workspace/rhythmbox-baidu-music/dialog.py:44
 msgid "Sign up"
 msgstr "注册"
 
-#: /home/sunny/workspace/rhythmbox-baidu-music/dialog.py:31
+#: /home/sunny/workspace/rhythmbox-baidu-music/dialog.py:51
 msgid "Forgot?"
 msgstr "忘记？"
 
-#: /home/sunny/workspace/rhythmbox-baidu-music/source.py:172
-msgid "Loading song IDs..."
-msgstr "载入歌曲ID..."
-
-#: /home/sunny/workspace/rhythmbox-baidu-music/source.py:195
+#: /home/sunny/workspace/rhythmbox-baidu-music/source.py:203
 msgid "Loading song list..."
 msgstr "载入歌曲列表..."
+
+#: /home/sunny/workspace/rhythmbox-baidu-music/source.py:259
+msgid "Loading song IDs..."
+msgstr "载入歌曲ID..."
 
 #: /home/sunny/workspace/rhythmbox-baidu-music/search.ui:29
 msgid "Search Music"
@@ -127,49 +145,52 @@ msgid "Album"
 msgstr "专辑"
 
 #: /home/sunny/workspace/rhythmbox-baidu-music/search.ui:190
-msgid "Collect all selected songs."
-msgstr "收藏所有选择的歌曲"
+msgid "Play all selected songs."
+msgstr "播放所有选择的歌曲"
 
 #: /home/sunny/workspace/rhythmbox-baidu-music/search.ui:191
-msgid "Collect"
-msgstr "收藏"
+msgid "Play"
+msgstr "播放"
 
-#: /home/sunny/workspace/rhythmbox-baidu-music/search.ui:215
+#: /home/sunny/workspace/rhythmbox-baidu-music/search.ui:230
 msgid "Go to the first page."
 msgstr "去到第一页"
 
-#: /home/sunny/workspace/rhythmbox-baidu-music/search.ui:216
+#: /home/sunny/workspace/rhythmbox-baidu-music/search.ui:231
 msgid "First"
 msgstr "首页"
 
-#: /home/sunny/workspace/rhythmbox-baidu-music/search.ui:230
+#: /home/sunny/workspace/rhythmbox-baidu-music/search.ui:245
 msgid "Go to the back page."
 msgstr "去到后一页"
 
-#: /home/sunny/workspace/rhythmbox-baidu-music/search.ui:231
+#: /home/sunny/workspace/rhythmbox-baidu-music/search.ui:246
 msgid "Back"
 msgstr "后退"
 
-#: /home/sunny/workspace/rhythmbox-baidu-music/search.ui:245
+#: /home/sunny/workspace/rhythmbox-baidu-music/search.ui:260
 msgid "Go to the next page."
 msgstr "去到下一页"
 
-#: /home/sunny/workspace/rhythmbox-baidu-music/search.ui:246
+#: /home/sunny/workspace/rhythmbox-baidu-music/search.ui:261
 msgid "Forward"
 msgstr "前进"
 
-#: /home/sunny/workspace/rhythmbox-baidu-music/search.ui:260
+#: /home/sunny/workspace/rhythmbox-baidu-music/search.ui:275
 msgid "Go to the last page."
 msgstr "去到末一页"
 
-#: /home/sunny/workspace/rhythmbox-baidu-music/search.ui:261
+#: /home/sunny/workspace/rhythmbox-baidu-music/search.ui:276
 msgid "Last"
 msgstr "末页"
 
-#: /home/sunny/workspace/rhythmbox-baidu-music/search.ui:284
+#: /home/sunny/workspace/rhythmbox-baidu-music/search.ui:299
 msgid "Total /"
 msgstr "总共 /"
 
-#: /home/sunny/workspace/rhythmbox-baidu-music/search.ui:317
+#: /home/sunny/workspace/rhythmbox-baidu-music/search.ui:332
 msgid "Go"
 msgstr "转到"
+
+#~ msgid "Play all selected songs in temporary list."
+#~ msgstr "播放所有选择的歌曲"
