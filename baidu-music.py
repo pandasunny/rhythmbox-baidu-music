@@ -26,6 +26,7 @@ from gi.repository import GObject
 from gi.repository import Gio
 from gi.repository import RB
 from gi.repository import Peas
+from gi.repository import PeasGtk
 from gi.repository import Gtk
 from gi.repository import GdkPixbuf
 
@@ -330,6 +331,7 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
         if self.collect_source.activated and songs:
             self.collect_source.add(songs)
 
+
 class BaiduMusicEntryType(RB.RhythmDBEntryType):
 
     def __init__(self, db):
@@ -371,3 +373,45 @@ class BaiduMusicEntryType(RB.RhythmDBEntryType):
 
     def do_sync_metadata(self, entry, changes):
         return
+
+
+class BaiduMusicConfigDialog(GObject.Object, PeasGtk.Configurable):
+    __gtype_name__ = "BaiduMusicConfigDialog"
+    object = GObject.property(type=GObject.Object)
+
+    def do_create_configure_widget(self):
+
+        self.settings = Gio.Settings("org.gnome.rhythmbox.plugins.baidu-music")
+
+        builder = Gtk.Builder()
+        builder.set_translation_domain(APPNAME)
+        builder.add_from_file(rb.find_plugin_file(self, "baidu-music-prefs.ui"))
+        self.config_dialog = builder.get_object("config")
+
+        self.lyricdir_entry = builder.get_object("lyricdir_entry")
+        self.lyricdir_entry.set_text(self.settings["lyric-path"])
+
+        self.lyricdir_button = builder.get_object("lyricdir_button")
+        self.lyricdir_button.connect("clicked", self.lyricdir_clicked_cb)
+
+        return self.config_dialog
+
+    def lyricdir_clicked_cb(self, widget):
+        dialog = Gtk.FileChooserDialog(_("Please choose a folder"),
+                self.config_dialog.get_toplevel(),
+                Gtk.FileChooserAction.SELECT_FOLDER,
+                (
+                    Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
+                    Gtk.STOCK_OK, Gtk.ResponseType.OK
+                ))
+        dialog.set_default_size(800, 400)
+
+        response = dialog.run()
+        if response == Gtk.ResponseType.OK:
+            lyricdir = dialog.get_filename()
+            self.lyricdir_entry.set_text(lyricdir)
+            self.settings["lyric-path"] = lyricdir
+        elif response == Gtk.ResponseType.CANCEL:
+            pass
+
+        dialog.destroy()
