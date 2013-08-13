@@ -48,6 +48,7 @@ PASSPORT_URL = "https://passport.baidu.com"
 CROSSDOMAIN_URL = "http://user.hao123.com/static/crossdomain.php?"
 TTPLAYER_URL = "http://qianqianmini.baidu.com"
 MUSICBOX_URL = "http://play.baidu.com"
+TINGAPI_URL = "http://tingapi.ting.baidu.com"
 #REFERER_URL = "http://qianqianmini.baidu.com/app/passport/passport_phoenix.html"
 #CROSSDOMAIN_REFERER_URL = "http://qianqianmini.baidu.com/app/passport/index.htm"
 
@@ -642,3 +643,53 @@ class Client(object):
         logging.debug("The deleted collection of songs: %s", str(song_ids))
         return result
 
+    # playlist information
+    def get_playlists(self, page_no=0, page_size=50):
+        """ Get all playlists.
+
+        Args:
+            page_no: The number of page.
+            page_size: The count of playlists in a page.
+
+        Returns:
+            Three variables includes "havemore", "total", "play_list".
+            play_list = {
+                "id": string,
+                "title": string,
+                "author":null,
+                "tag":null,
+                "description":null,
+                "create_time": int,
+                "covers":null,
+                "song_count": string,
+                "collected_count":null,
+                "recommend_count":null,
+                "songlist":null,
+                "access_control":0,
+                "diy_type":1,
+                "status":null,
+                "pic_180": string # playlist coverart
+                }
+        """
+        url = TINGAPI_URL + "/v1/restserver/ting?"
+        params = {
+                "method": "ting.baidu.diy.getPlaylists",
+                "format": "json",
+                "from": "bmpc",
+                "version": "1.0.0",
+                "bduss": self.__bduss,
+                "with_song": 0,
+                "page_no": page_no,
+                "page_size": page_size,
+            }
+        headers = {
+                "Referer": "http://pc.music.baidu.com",
+                "User-Agent": "bmpc_1.0.0"
+                }
+
+        response = json.loads(self.__request(url, "GET", params, headers))
+        if response["error_code"] == 22000:
+            result = response["havemore"], response["total"], response["play_list"]
+        else:
+            result = False
+        return result
