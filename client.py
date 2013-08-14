@@ -693,3 +693,34 @@ class Client(object):
         else:
             result = False
         return result
+
+    def get_playlist(self, playlist_id):
+        """ Get all the ids of online playlist.
+
+        Args:
+            playlist_id: The id of online playlist.
+
+        Returns:
+            A list include all song ids.
+            The response data is a dict like this:
+            {
+                "query": {
+                    "sid": "1",
+                    "playListId": the size of ids,
+                    "_": timestamp
+                },
+                "errorCode": the error(22000 is normal),
+                "data": {
+                    "songIds": a list
+                }
+            }
+        """
+        url = MUSICBOX_URL + "/data/playlist/getDetail?"
+        params = {
+                "sid": 1,
+                "playListId": playlist_id,
+                "_": int(time.time())
+                }
+        response = json.loads(self.__request(url, "GET", params))
+        return response["data"]["songIds"] if response["errorCode"] == 22000 \
+                else False
