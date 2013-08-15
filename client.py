@@ -724,3 +724,29 @@ class Client(object):
         response = json.loads(self.__request(url, "GET", params))
         return response["data"]["songIds"] if response["errorCode"] == 22000 \
                 else False
+
+    def add_playlist(self, title):
+        """ Add a playlist in cloud.
+
+        Args:
+            title: The title of a playlist which were been added.
+
+        Returns:
+            The id of playlist.
+        """
+        url = TINGAPI_URL + "/v1/restserver/ting?"
+        params = {
+                "method": "baidu.ting.diy.addList",
+                "format": "json",
+                "from": "bmpc",
+                "version": "1.0.0",
+                "bduss": self.__bduss,
+                "title": title,
+            }
+        headers = {
+                "Referer": "http://pc.music.baidu.com",
+                "User-Agent": "bmpc_1.0.0"
+                }
+        response = json.loads(self.__request(url, "GET", params, headers))
+        return response["result"]["listId"] if response["error_code"] == 22000 \
+                else False
