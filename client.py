@@ -775,3 +775,30 @@ class Client(object):
                 }
         response = json.loads(self.__request(url, "GET", params, headers))
         return True if response["error_code"] == 22000 else False
+
+    def rename_playlist(self, playlist_id, title):
+        """ Rename a playlist in cloud.
+
+        Args:
+            playlist_id: The id of a playlist.
+            title: The title of a playlist.
+
+        Returns:
+            A boolean.
+        """
+        url = TINGAPI_URL + "/v1/restserver/ting?"
+        params = {
+                "method": "baidu.ting.diy.upList",
+                "format": "json",
+                "from": "bmpc",
+                "version": "1.0.0",
+                "bduss": self.__bduss,
+                "listId": int(playlist_id),
+                "title": title,
+            }
+        headers = {
+                "Referer": "http://pc.music.baidu.com",
+                "User-Agent": "bmpc_1.0.0"
+                }
+        response = json.loads(self.__request(url, "GET", params, headers))
+        return True if response["error_code"] == 22000 else False
