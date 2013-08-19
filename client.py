@@ -802,3 +802,58 @@ class Client(object):
                 }
         response = json.loads(self.__request(url, "GET", params, headers))
         return True if response["error_code"] == 22000 else False
+
+    def add_playlist_songs(self, playlist_id, song_ids):
+        """ Add songs to a playlist.
+
+        Args:
+            playlist_id: The id of a playlist.
+            song_ids: The ids list of songs.
+
+        Returns:
+            A list includes the ids of songs which were added.
+        """
+        url = TINGAPI_URL + "/v1/restserver/ting?"
+        params = {
+                "method": "baidu.ting.diy.addListSong",
+                "format": "json",
+                "from": "bmpc",
+                "version": "1.0.0",
+                "bduss": self.__bduss,
+                "listId": int(playlist_id),
+                "songId": ",".join(map(str, song_ids)),
+            }
+        headers = {
+                "Referer": "http://pc.music.baidu.com",
+                "User-Agent": "bmpc_1.0.0"
+                }
+        response = json.loads(self.__request(url, "GET", params, headers))
+        return response["result"]["add"] if response["error_code"] == 22000 \
+                else False
+
+    def delete_playlist_songs(self, playlist_id, song_ids):
+        """ Delete songs to a playlist.
+
+        Args:
+            playlist_id: The id of a playlist.
+            song_ids: The ids list of songs.
+
+        Returns:
+            A boolean.
+        """
+        url = TINGAPI_URL + "/v1/restserver/ting?"
+        params = {
+                "method": "baidu.ting.diy.delListSong",
+                "format": "json",
+                "from": "bmpc",
+                "version": "1.0.0",
+                "bduss": self.__bduss,
+                "listId": int(playlist_id),
+                "songId": ",".join(map(str, song_ids)),
+            }
+        headers = {
+                "Referer": "http://pc.music.baidu.com",
+                "User-Agent": "bmpc_1.0.0"
+                }
+        response = json.loads(self.__request(url, "GET", params, headers))
+        return True if response["error_code"] == 22000 else False
