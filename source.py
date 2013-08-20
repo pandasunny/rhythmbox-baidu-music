@@ -32,6 +32,7 @@ from gi.repository import Gtk
 from gi.repository import RB
 
 DELTA = 200
+TEMP_PLAYLIST = "baidu-music/temp.pls"
 
 
 class BaseSource(RB.StaticPlaylistSource):
@@ -220,17 +221,18 @@ class BaseSource(RB.StaticPlaylistSource):
             print entry.get_string(RB.RhythmDBPropType.LOCATION)
             print entry.get_string(RB.RhythmDBPropType.TITLE)
 
-class CollectSource(BaseSource):
+class BasePlaylist(BaseSource):
 
     def __init__(self):
-        super(CollectSource, self).__init__()
+        super(BasePlaylist, self).__init__()
+        self.popup_widget = None
 
     def do_selected(self):
         if not self.activated:
 
             # setup the popup menu
             shell = self.props.shell
-            self.popup = shell.props.ui_manager.get_widget("/CollectSourcePopup")
+            self.popup = shell.props.ui_manager.get_widget(self.popup_widget)
 
             self.set_entry_view()
 
@@ -250,12 +252,94 @@ class CollectSource(BaseSource):
                 self.remove_entry(entry)
                 self.songs = filter(lambda x: x not in song_ids, self.songs)
 
-    def __get_song_ids(self):
+    def get_song_ids(self):
         """ Get all ids of songs from baidu music.
 
         Returns:
             A list includes all ids.
         """
+        return []
+
+    def load_cb(self):
+        """ The callback function of load all songs. """
+        self.updating = True
+        self.songs = self.get_song_ids()
+        if self.songs:
+            songs = self.get_songs(self.songs)
+            self.add_songs(songs, self.index)
+        self.updating = False
+        self.notify_status_changed()
+
+    def load(self):
+        """ The thread function of load all songs. """
+        thread = threading.Thread(target=self.load_cb)
+        thread.start()
+
+    def sync_cb(self):
+        """ The callback function of sync all songs. """
+        self.updating = True
+        song_ids = self.get_song_ids()
+
+        # checkout the added items and the deleted items
+        add_ids = song_ids[:]   # the added items
+        delete_ids = []         # the delete items
+        for key, item in enumerate(self.songs):
+            index = key - len(delete_ids)
+            if index >= len(song_ids) or song_ids[index] != item:
+                delete_ids.append(item)
+            elif song_ids[index] == item:
+                add_ids.remove(item)
+        add_ids.reverse()
+
+        # traversal rows in the query model
+        qm = self.get_query_model()
+        if delete_ids:
+            for row in qm:
+                entry = row[0]
+                song_id = int(entry.get_string(RB.RhythmDBPropType.LOCATION))
+                if song_id in delete_ids:
+                    self.remove_entry(entry)
+
+        if add_ids:
+            songs = self.get_songs(add_ids)
+            self.add_songs(songs, self.index)
+
+        self.songs = song_ids
+        self.updating = False
+        self.notify_status_changed()
+
+    def sync(self):
+        """ The thread function of sync all songs. """
+        thread = threading.Thread(target=self.sync_cb)
+        thread.start()
+
+    def add(self, songs):
+        """ Create entries with songs.
+
+        Args:
+            songs: A list includes songs.
+        """
+        if songs:
+            songs.reverse()
+            self.songs.extend([int(song["songId"]) for song in songs])
+            self.add_songs(songs, self.index)
+
+    def clear(self):
+        """ Clear all entries in this source. """
+        qm = self.get_query_model()
+        for row in qm:
+            entry = row[0]
+            self.remove_entry(entry)
+
+
+class CollectSource(BasePlaylist):
+
+    def __init__(self):
+        super(CollectSource, self).__init__()
+        self.popup_widget = "/CollectSourcePopup"
+        self.index = 0
+
+    def get_song_ids(self):
         self.status = _("Loading song IDs...")
         start, song_ids = 0, []
         while True:
@@ -270,74 +354,17 @@ class CollectSource(BaseSource):
         self.notify_status_changed()
         return song_ids
 
-    def __load_cb(self):
-        """ The callback function of load all songs. """
-        self.updating = True
-        self.songs = self.__get_song_ids()
-        songs = self.get_songs(self.songs)
-        self.add_songs(songs, 0)
-        self.updating = False
-        self.notify_status_changed()
 
-    def load(self):
-        """ The thread function of load all songs. """
-        thread = threading.Thread(target=self.__load_cb)
-        thread.start()
+class OnlinePlaylistSource(BasePlaylist):
 
-    def __sync_cb(self):
-        """ The callback function of sync all songs. """
-        self.updating = True
-        song_ids = self.__get_song_ids()
+    def __init__(self):
+        super(OnlinePlaylistSource, self).__init__()
+        self.playlist_id = None
+        self.popup_widget = "/CollectSourcePopup"
+        self.index = -1
 
-        # checkout the added items and the deleted items
-        add_ids = song_ids[:]   # the added items
-        delete_ids = []         # the delete items
-        for key, item in enumerate(self.songs):
-            index = key - len(delete_ids)
-            if index >= len(song_ids) or song_ids[index] != item:
-                delete_ids.append(item)
-            elif song_ids[index] == item:
-                add_ids.remove(item)
-        add_ids.reverse()
-
-        # traversal rows in the query model
-        if delete_ids:
-            for row in self.__query_model:
-                entry = row[0]
-                song_id = int(entry.get_string(RB.RhythmDBPropType.LOCATION))
-                if song_id in delete_ids:
-                    self.remove_entry(entry)
-
-        if add_ids:
-            songs = self.get_songs(add_ids)
-            self.add_songs(songs, 0)
-
-        self.songs = song_ids
-        self.updating = False
-        self.notify_status_changed()
-
-    def sync(self):
-        """ The thread function of sync all songs. """
-        thread = threading.Thread(target=self.__sync_cb)
-        thread.start()
-
-    def add(self, songs):
-        """ Create entries with songs.
-
-        Args:
-            songs: A list includes songs.
-        """
-        if songs:
-            songs.reverse()
-            self.songs.extend([int(song["songId"]) for song in songs])
-            self.add_songs(songs, 0)
-
-    def clear(self):
-        """ Clear all entries in this source. """
-        qm = self.get_query_model()
-        for row in qm:
-            entry = row[0]
-            self.remove_entry(entry)
+    def get_song_ids(self):
+        return self.client.get_playlist(self.playlist_id)
 
 
 class TempSource(BaseSource):
@@ -350,7 +377,7 @@ class TempSource(BaseSource):
 
             self.set_entry_view()
 
-            self.__playlist =  RB.find_user_cache_file("baidu-music/temp.pls")
+            self.__playlist =  RB.find_user_cache_file(TEMP_PLAYLIST)
             if not os.path.isfile(self.__playlist):
                 os.mknod(self.__playlist)
             else:
@@ -388,4 +415,5 @@ class TempSource(BaseSource):
 
 
 GObject.type_register(CollectSource)
+GObject.type_register(OnlinePlaylistSource)
 GObject.type_register(TempSource)
