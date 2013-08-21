@@ -135,7 +135,7 @@ class BaseSource(RB.StaticPlaylistSource):
             songs: A list includes all songs.
             index: the index position of song.
         """
-        if not songs:
+        if not songs or not self.activated:
             return False
 
         db = self.get_db()

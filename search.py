@@ -19,16 +19,19 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+from gi.repository import Gtk
+
 
 class SearchHandle(object):
 
-    def __init__(self, builder, collect_source, client, temp_source):
+    def __init__(self, builder, collect_source, client, temp_source, playlists):
 
         # the basic objects
         self.__collect_source = collect_source
         self.__temp_source = temp_source
         self.__client = client
         self.__builder = builder
+        self.__playlists = playlists
 
         # the widgets
         self.__liststore = builder.get_object("liststore")
@@ -177,8 +180,7 @@ class SearchHandle(object):
     def on_collect(self, widget):
         """ Collect all selected songs. """
         songs = self.__client.add_favorite_songs(self.__song_ids)
-        if self.__collect_source.activated and songs:
-            self.__collect_source.add(songs)
+        self.__collect_source.add(songs)
 
     def on_play(self, widget):
         """ Play all selected songs. """
@@ -188,6 +190,21 @@ class SearchHandle(object):
         if songs:
             self.__temp_source.add(songs)
 
+    def on_add(self, widget):
+        """ Add all selected songs to playlist. """
+        song_ids = [song_id for song_id in self.__song_ids]
+        dialog = AddToPlaylistDialog(self.__playlists, song_ids)
+        response = dialog.run()
+        if response == Gtk.ResponseType.OK:
+            playlist_id = dialog.playlist_id
+            if playlist_id:
+                songs_ids = self.__client.add_playlist_songs(playlist_id, song_ids)
+                songs = self.__client.get_song_info(song_ids)
+                self.__playlists[playlist_id].add(songs)
+        elif response == Gtk.ResponseType.CANCEL:
+            pass
+        dialog.destroy()
+
     def on_goto(self, widget):
         """ Go to the custom page. """
         self.__page_spinbutton.update()
@@ -195,3 +212,35 @@ class SearchHandle(object):
         if page <= self.__last_page:
             result = self.__client.search(self.__keyword, page)
             self.__refresh(result)
+
+
+class AddToPlaylistDialog(Gtk.Dialog):
+    def __init__(self, playlists, songs):
+        Gtk.Dialog.__init__(self,
+            _("Add songs to..."), None, 0, (
+                Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
+                Gtk.STOCK_OK, Gtk.ResponseType.OK,
+        ))
+
+        id_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=5)
+        id_box.set_border_width(5)
+
+        button = None
+        for playlist_id, playlist in playlists.iteritems():
+            title = playlist.get_property("name")
+            if not button:
+                self.playlist_id = playlist_id
+            button = Gtk.RadioButton.new_with_label_from_widget(button, title)
+            button.connect("toggled", self.on_button_toggled, playlist_id)
+            id_box.pack_start(button, False, False, 0)
+
+        box = self.get_content_area()
+        box.add(id_box)
+        self.show_all()
+
+    def on_button_toggled(self, button, playlist_id):
+        if button.get_active():
+            self.playlist_id = playlist_id
+        else:
+            self.playlist_id = None
+        print self.playlist_id

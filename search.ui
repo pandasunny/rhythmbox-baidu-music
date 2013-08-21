@@ -184,6 +184,21 @@
               </packing>
             </child>
             <child>
+              <object class="GtkToolButton" id="add_button">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="tooltip_text" translatable="yes">Add all selected songs to playlist.</property>
+                <property name="label" translatable="yes">Add</property>
+                <property name="use_underline">True</property>
+                <property name="icon_name">add</property>
+                <signal name="clicked" handler="on_add" swapped="no"/>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="homogeneous">True</property>
+              </packing>
+            </child>
+            <child>
               <object class="GtkToolButton" id="play_button">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>

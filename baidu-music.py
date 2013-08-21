@@ -390,10 +390,11 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
 
             builder.connect_signals(
                     SearchHandle(
-                        builder = builder,
-                        collect_source = self.collect_source,
-                        temp_source = self.temp_source,
-                        client = self.client
+                        builder=builder,
+                        collect_source=self.collect_source,
+                        temp_source=self.temp_source,
+                        client=self.client,
+                        playlists=self.playlists,
                         )
                     )
 
@@ -463,6 +464,8 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
                         "id": playlist_id,
                         "title": title
                         })
+        elif response == Gtk.ResponseType.CANCEL:
+            pass
         dialog.destroy()
 
     def __rename_playlist(self, widget):
@@ -480,6 +483,8 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
                         )
                 if result:
                     shell.props.selected_page.set_property("name", title)
+        elif response == Gtk.ResponseType.CANCEL:
+            pass
         dialog.destroy()
 
     def __delete_playlist(self, widget):
@@ -496,6 +501,8 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
                 playlist = self.playlists[playlist_id]
                 playlist.delete_thyself()
                 del self.playlists[playlist_id]
+        elif response == Gtk.ResponseType.CANCEL:
+            pass
         dialog.destroy()
 
 
