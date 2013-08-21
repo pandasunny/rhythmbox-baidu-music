@@ -37,6 +37,8 @@ from source import OnlinePlaylistSource
 from source import TempSource
 from search import SearchHandle
 from dialog import LoginDialog
+from dialog import AddPlaylistDialog
+from dialog import RenamePlaylistDialog
 
 import gettext
 
@@ -70,9 +72,9 @@ POPUP_UI = """
   </popup>
   <popup name="OnlinePlaylistPopup">
     <menuitem name="BaiduMusicSync" action="BaiduMusicSyncAction"/>
-    <!-- <menuitem name="BaiduMusicPlaylistAdd" action="BaiduMusicPlaylistRenameAction"/> -->
-    <!-- <menuitem name="BaiduMusicPlaylistRename" action="BaiduMusicPlaylistRenameAction"/> -->
-    <!-- <menuitem name="BaiduMusicPlaylistDelete" action="BaiduMusicPlaylistRenameAction"/> -->
+    <menuitem name="BaiduMusicPlaylistAdd" action="BaiduMusicPlaylistAddAction"/>
+    <menuitem name="BaiduMusicPlaylistRename" action="BaiduMusicPlaylistRenameAction"/>
+    <menuitem name="BaiduMusicPlaylistDelete" action="BaiduMusicPlaylistDeleteAction"/>
   </popup>
 </ui>
 """
@@ -341,6 +343,34 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
         action.connect("activate", self.__collect_songs)
         self.action_group.add_action(action)
 
+
+        action = Gtk.Action(
+                name="BaiduMusicPlaylistAddAction",
+                label=_("Add"),
+                tooltip=_("Add online playlist."),
+                stock_id=None
+                )
+        action.connect("activate", self.__add_playlist)
+        self.action_group.add_action(action)
+
+        action = Gtk.Action(
+                name="BaiduMusicPlaylistRenameAction",
+                label=_("Rename"),
+                tooltip=_("Rename the title of playlist."),
+                stock_id=None
+                )
+        action.connect("activate", self.__rename_playlist)
+        self.action_group.add_action(action)
+
+        action = Gtk.Action(
+                name="BaiduMusicPlaylistDeleteAction",
+                label=_("Delete"),
+                tooltip=_("Delete this playlist."),
+                stock_id=None
+                )
+        action.connect("activate", self.__delete_playlist)
+        self.action_group.add_action(action)
+
         manager.insert_action_group(self.action_group, 0)
         manager.ensure_update()
 
@@ -420,6 +450,53 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
         songs = self.client.add_favorite_songs(song_ids)
         if self.collect_source.activated and songs:
             self.collect_source.add(songs)
+
+    def __add_playlist(self, widget):
+        dialog = AddPlaylistDialog()
+        response = dialog.run()
+        if response == Gtk.ResponseType.OK:
+            title = dialog.title_entry.get_text().strip()
+            if title != "":
+                playlist_id = self.client.add_playlist(title)
+                if playlist_id:
+                    self.__set_playlist({
+                        "id": playlist_id,
+                        "title": title
+                        })
+        dialog.destroy()
+
+    def __rename_playlist(self, widget):
+
+        shell = self.object
+        old_title = shell.props.selected_page.get_property("name")
+        dialog = RenamePlaylistDialog()
+        dialog.old_title_entry.set_text(old_title)
+        response = dialog.run()
+        if response == Gtk.ResponseType.OK:
+            title = dialog.title_entry.get_text().strip()
+            if old_title != title:
+                result = self.client.rename_playlist(
+                        shell.props.selected_page.playlist_id, title
+                        )
+                if result:
+                    shell.props.selected_page.set_property("name", title)
+        dialog.destroy()
+
+    def __delete_playlist(self, widget):
+        shell = self.object
+        playlist_id = shell.props.selected_page.playlist_id
+        dialog = Gtk.MessageDialog(None, 0, Gtk.MessageType.QUESTION,
+            Gtk.ButtonsType.OK_CANCEL, _("Delete confirm"))
+        dialog.format_secondary_text(
+                _("Are you sure you want to delete this playlist?")
+                )
+        response = dialog.run()
+        if response == Gtk.ResponseType.OK:
+            if self.client.delete_playlist(playlist_id):
+                playlist = self.playlists[playlist_id]
+                playlist.delete_thyself()
+                del self.playlists[playlist_id]
+        dialog.destroy()
 
 
 class BaiduMusicEntryType(RB.RhythmDBEntryType):

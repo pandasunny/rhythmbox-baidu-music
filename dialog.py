@@ -66,3 +66,56 @@ class LoginDialog(Gtk.Dialog):
         box = self.get_content_area()
         box.add(grid)
         self.show_all()
+
+
+class AddPlaylistDialog(Gtk.Dialog):
+    def __init__(self):
+        Gtk.Dialog.__init__(self,
+            _("Add Playlist"), None, 0, (
+                Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
+                Gtk.STOCK_OK, Gtk.ResponseType.OK,
+        ))
+
+        # username and password input
+        title_label = Gtk.Label(_("Title:"))
+        self.title_entry = Gtk.Entry()
+
+        grid = Gtk.Grid()
+        grid.set_column_spacing(5)
+        grid.set_border_width(5)
+
+        grid.add(title_label)
+        grid.attach(self.title_entry, 1, 0, 2, 1)
+
+        box = self.get_content_area()
+        box.add(grid)
+        self.show_all()
+
+
+class RenamePlaylistDialog(Gtk.Dialog):
+    def __init__(self):
+        Gtk.Dialog.__init__(self,
+            _("Rename Playlist"), None, 0, (
+                Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
+                Gtk.STOCK_OK, Gtk.ResponseType.OK,
+        ))
+
+        # username and password input
+        old_title_label = Gtk.Label(_("Old title:"))
+        title_label = Gtk.Label(_("New title:"))
+        self.old_title_entry = Gtk.Entry()
+        self.old_title_entry.set_sensitive(False)
+        self.title_entry = Gtk.Entry()
+
+        grid = Gtk.Grid()
+        grid.set_column_spacing(5)
+        grid.set_border_width(5)
+
+        grid.add(old_title_label)
+        grid.attach(self.old_title_entry, 1, 0, 2, 1)
+        grid.attach(title_label, 0, 1, 1, 1)
+        grid.attach(self.title_entry, 1, 1, 2, 1)
+
+        box = self.get_content_area()
+        box.add(grid)
+        self.show_all()
