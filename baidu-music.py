@@ -33,6 +33,7 @@ from gi.repository import GdkPixbuf
 from client import Client
 from source import BaseSource
 from source import CollectSource
+from source import OnlinePlaylistSource
 from source import TempSource
 from search import SearchHandle
 from dialog import LoginDialog
@@ -57,8 +58,21 @@ POPUP_UI = """
     <toolitem name="BaiduMusicCollect" action="BaiduMusicCollectAction"/>
     <!-- <toolitem name="BaiduMusicTest" action="BaiduMusicTestAction"/> -->
   </toolbar>
+  <toolbar name="OnlinePlaylistSourceToolbar">
+    <toolitem name="Browse" action="ViewBrowser"/>
+    <toolitem name="BaiduMusicSearch" action="BaiduMusicSearchAction"/>
+    <toolitem name="BaiduMusicCollect" action="BaiduMusicCollectAction"/>
+    <toolitem name="BaiduMusicSync" action="BaiduMusicSyncAction"/>
+    <!-- <toolitem name="BaiduMusicTest" action="BaiduMusicTestAction"/> -->
+  </toolbar>
   <popup name="CollectSourcePopup">
     <menuitem name="BaiduMusicSync" action="BaiduMusicSyncAction"/>
+  </popup>
+  <popup name="OnlinePlaylistPopup">
+    <menuitem name="BaiduMusicSync" action="BaiduMusicSyncAction"/>
+    <!-- <menuitem name="BaiduMusicPlaylistAdd" action="BaiduMusicPlaylistRenameAction"/> -->
+    <!-- <menuitem name="BaiduMusicPlaylistRename" action="BaiduMusicPlaylistRenameAction"/> -->
+    <!-- <menuitem name="BaiduMusicPlaylistDelete" action="BaiduMusicPlaylistRenameAction"/> -->
   </popup>
 </ui>
 """
@@ -82,9 +96,14 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
         self.entry_type = BaiduMusicEntryType(self.db)
         self.db.register_entry_type(self.entry_type)
 
+        self.playlists = {}
+
         self.__set_sources()
         self.__set_client()
         self.__set_ui_manager()
+
+        if self.client.islogin:
+            self.__set_playlists()
 
         self.__search_window = None
 
@@ -111,6 +130,18 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
         self.temp_source.delete_thyself()
         self.temp_source = None
 
+        # delete playlists
+        playlists = self.playlists.values()
+        for playlist in playlists:
+            playlist.delete_thyself()
+        self.playlists = None
+
+        # delete page_group
+        self.playlist_page_group.delete_thyself()
+        self.playlist_page_group = None
+        self.page_group.delete_thyself()
+        self.page_group = None
+
         # delete some variables
         self.db = None
         self.entry_type = None
@@ -127,18 +158,20 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
         what, width, height = Gtk.icon_size_lookup(Gtk.IconSize.LARGE_TOOLBAR)
 
         # create a page group
-        page_group = RB.DisplayPageGroup(
-                shell=shell,
-                id="baidu-music",
-                name=_("Baidu Music"),
-                #pixbuf=baidu_icon,
-                category=RB.DisplayPageGroupType.TRANSIENT,
-                )
+        page_group = RB.DisplayPageGroup.get_by_id("baidu-music")
+        if not page_group:
+            page_group = RB.DisplayPageGroup(
+                    shell=shell,
+                    id="baidu-music",
+                    name=_("Baidu Music"),
+                    #pixbuf=baidu_icon,
+                    category=RB.DisplayPageGroupType.TRANSIENT,
+                    )
         shell.append_display_page(page_group, None)
                 #RB.DisplayPageGroup.get_by_id("stores"))
 
         # create the temp source
-        baidu_icon = GdkPixbuf.Pixbuf.new_from_file_at_size(
+        icon = GdkPixbuf.Pixbuf.new_from_file_at_size(
                 rb.find_plugin_file(self, "music.png"), width, height)
 
         self.temp_source = GObject.new(
@@ -151,11 +184,11 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
                 toolbar_path="/TempSourceToolbar",
                 is_local=False,
                 )
-        self.temp_source.set_property("pixbuf", baidu_icon)
+        self.temp_source.set_property("pixbuf", icon)
         shell.append_display_page(self.temp_source, page_group)
 
         # create the collect source
-        collect_icon = GdkPixbuf.Pixbuf.new_from_file_at_size(
+        icon = GdkPixbuf.Pixbuf.new_from_file_at_size(
                 rb.find_plugin_file(self, "favorite.png"), width, height)
         self.collect_source = GObject.new(
                 CollectSource,
@@ -167,9 +200,58 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
                 toolbar_path="/CollectSourceToolbar",
                 is_local=False,
                 )
-        self.collect_source.set_property("pixbuf", collect_icon)
+        self.collect_source.set_property("pixbuf", icon)
         shell.append_display_page(self.collect_source, page_group)
-        #shell.register_entry_type_for_source(self.collect_source, self.entry_type)
+        shell.register_entry_type_for_source(self.collect_source, self.entry_type)
+
+        # Add a page_group which includes all online playlists
+        icon = Gtk.IconTheme.get_default().load_icon(
+                "audio-x-mp3-playlist", width,
+                Gtk.IconLookupFlags.GENERIC_FALLBACK)
+        playlist_page_group = RB.DisplayPageGroup.get_by_id("baidu-music-playlists")
+        if not playlist_page_group:
+            playlist_page_group = RB.DisplayPageGroup(
+                    shell=shell,
+                    id="baidu-music-playlists",
+                    name=_("Online Playlists"),
+                    category=RB.DisplayPageGroupType.TRANSIENT,
+                    )
+        playlist_page_group.set_property("pixbuf", icon)
+        shell.append_display_page(playlist_page_group, page_group)
+
+        self.page_group = page_group
+        self.playlist_page_group = playlist_page_group
+
+    def __get_playlists(self):
+        havemore, result = 1, []
+        if self.client.islogin:
+            while havemore:
+                havemore, total, playlists = self.client.get_playlists()
+                result.extend(playlists)
+        return result
+
+    def __set_playlists(self):
+        playlists = self.__get_playlists()
+        for playlist in playlists:
+            self.__set_playlist(playlist)
+
+    def __set_playlist(self, playlist):
+        shell = self.object
+
+        playlist_source = GObject.new(
+                OnlinePlaylistSource,
+                name=playlist["title"],
+                shell=shell,
+                plugin=self,
+                entry_type=self.entry_type,
+                settings=self.settings.get_child("source"),
+                toolbar_path="/OnlinePlaylistSourceToolbar",
+                is_local=False,
+                )
+        playlist_source.playlist_id = playlist["id"]
+        playlist_source.set_property("pixbuf", None)
+        shell.append_display_page(playlist_source, self.playlist_page_group)
+        self.playlists[playlist["id"]] = playlist_source
 
     def __set_client(self):
 
@@ -300,6 +382,13 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
                     self.settings["username"] = ""
                     self.settings["password"] = ""
                     self.collect_source.clear()
+
+                    # delete playlists
+                    playlists = self.playlists.values()
+                    for playlist in playlists:
+                        playlist.delete_thyself()
+                    self.playlists = {}
+
                     widget.set_label(_("Login"))
                     widget.set_tooltip(_("Sign in the baidu music."))
             dialog.destroy()
@@ -316,6 +405,7 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
                     self.settings["password"] = password
                     dialog.destroy()
                     self.collect_source.load()
+                    self.__set_playlists()
                     widget.set_label(_("Logout"))
                     widget.set_tooltip(_("Sign out the baidu music."))
                 except Exception as e:
