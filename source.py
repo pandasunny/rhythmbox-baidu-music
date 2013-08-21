@@ -246,8 +246,8 @@ class BasePlaylist(BaseSource):
         entries = self.get_entry_view().get_selected_entries()
         song_ids = [int(entry.dup_string(RB.RhythmDBPropType.LOCATION)) \
                 for entry in entries]
-        # remove songs in the favorite list
-        if self.client.remove_favorite_songs(song_ids):
+        # remove songs in the online playlist
+        if self.delete_songs(song_ids):
             for entry in entries:
                 self.remove_entry(entry)
                 self.songs = filter(lambda x: x not in song_ids, self.songs)
@@ -339,6 +339,9 @@ class CollectSource(BasePlaylist):
         self.popup_widget = "/CollectSourcePopup"
         self.index = 0
 
+    def delete_songs(self, song_ids):
+        return self.client.remove_favorite_songs(song_ids)
+
     def get_song_ids(self):
         self.status = _("Loading song IDs...")
         start, song_ids = 0, []
@@ -362,6 +365,9 @@ class OnlinePlaylistSource(BasePlaylist):
         self.playlist_id = None
         self.popup_widget = "/CollectSourcePopup"
         self.index = -1
+
+    def delete_songs(self, song_ids):
+        return self.client.delete_playlist_songs(self.playlist_id, song_ids)
 
     def get_song_ids(self):
         return self.client.get_playlist(self.playlist_id)
