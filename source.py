@@ -46,6 +46,7 @@ class BaseSource(RB.StaticPlaylistSource):
         self.songs = []             # the song ids in this source
         self.activated = False      # the tag of activate
         self.popup = None           # the popup menu
+        self.index = -1             # the index of position where insert song
 
         # get_status function
         self.updating = False       # the status of update
@@ -127,7 +128,7 @@ class BaseSource(RB.StaticPlaylistSource):
             storekey.add_field("artist", artist)
             store.store_uri(storekey, RB.ExtDBSourceType.SEARCH, uri)
 
-    def __add_songs(self, songs, index=-1):
+    def __add_songs(self, songs):
         """ Create entries and commit.
 
         Args:
@@ -157,7 +158,7 @@ class BaseSource(RB.StaticPlaylistSource):
                         entry, RB.RhythmDBPropType.ALBUM,
                         song["albumName"].encode("utf-8")
                         )
-                self.add_entry(entry, index)
+                self.add_entry(entry, self.index)
 
                 # setup the coverart uri
                 if song["songPicBig"]:
@@ -168,7 +169,7 @@ class BaseSource(RB.StaticPlaylistSource):
                     albumart = song["songPicSmall"]
                 self.albumart[song["artistName"]+song["albumName"]] = albumart
             except TypeError, e:
-                self.add_location(song["songId"], index)
+                self.add_location(song["songId"], self.index)
             except KeyError, e:
                 pass
 
@@ -266,7 +267,7 @@ class BasePlaylist(BaseSource):
         self.songs = self.get_song_ids()
         if self.songs:
             songs = self.get_songs(self.songs)
-            self.add_songs(songs, self.index)
+            self.add_songs(songs)
         self.updating = False
         self.notify_status_changed()
 
@@ -302,7 +303,7 @@ class BasePlaylist(BaseSource):
 
         if add_ids:
             songs = self.get_songs(add_ids)
-            self.add_songs(songs, self.index)
+            self.add_songs(songs)
 
         self.songs = song_ids
         self.updating = False
@@ -322,7 +323,7 @@ class BasePlaylist(BaseSource):
         if songs:
             songs.reverse()
             self.songs.extend([int(song["songId"]) for song in songs])
-            self.add_songs(songs, self.index)
+            self.add_songs(songs)
 
     def clear(self):
         """ Clear all entries in this source. """
@@ -363,8 +364,7 @@ class OnlinePlaylistSource(BasePlaylist):
     def __init__(self):
         super(OnlinePlaylistSource, self).__init__()
         self.playlist_id = None
-        self.popup_widget = "/CollectSourcePopup"
-        self.index = -1
+        self.popup_widget = "/OnlinePlaylistPopup"
 
     def delete_songs(self, song_ids):
         return self.client.delete_playlist_songs(self.playlist_id, song_ids)
@@ -412,7 +412,7 @@ class TempSource(BaseSource):
         """
         if songs:
             self.songs.extend([int(song["songId"]) for song in songs])
-            self.add_songs(songs, -1)
+            self.add_songs(songs)
             self.__save()
 
     def __save(self):
