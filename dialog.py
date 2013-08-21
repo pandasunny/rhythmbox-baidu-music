@@ -119,3 +119,35 @@ class RenamePlaylistDialog(Gtk.Dialog):
         box = self.get_content_area()
         box.add(grid)
         self.show_all()
+
+
+class AddToPlaylistDialog(Gtk.Dialog):
+    def __init__(self, playlists, songs, skip_id=""):
+        Gtk.Dialog.__init__(self,
+            _("Add songs to..."), None, 0, (
+                Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
+                Gtk.STOCK_OK, Gtk.ResponseType.OK,
+        ))
+
+        id_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=5)
+        id_box.set_border_width(5)
+
+        button = None
+        for playlist_id, playlist in playlists.iteritems():
+            if playlist_id != skip_id:
+                title = playlist.get_property("name")
+                if not button:
+                    self.playlist_id = playlist_id
+                button = Gtk.RadioButton.new_with_label_from_widget(button, title)
+                button.connect("toggled", self.on_button_toggled, playlist_id)
+                id_box.pack_start(button, False, False, 0)
+
+        box = self.get_content_area()
+        box.add(id_box)
+        self.show_all()
+
+    def on_button_toggled(self, button, playlist_id):
+        if button.get_active():
+            self.playlist_id = playlist_id
+        else:
+            self.playlist_id = None

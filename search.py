@@ -19,7 +19,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from gi.repository import Gtk
+from dialog import AddToPlaylistDialog
 
 
 class SearchHandle(object):
@@ -214,35 +214,3 @@ class SearchHandle(object):
         if page <= self.__last_page:
             result = self.__client.search(self.__keyword, page)
             self.__refresh(result)
-
-
-class AddToPlaylistDialog(Gtk.Dialog):
-    def __init__(self, playlists, songs):
-        Gtk.Dialog.__init__(self,
-            _("Add songs to..."), None, 0, (
-                Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
-                Gtk.STOCK_OK, Gtk.ResponseType.OK,
-        ))
-
-        id_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=5)
-        id_box.set_border_width(5)
-
-        button = None
-        for playlist_id, playlist in playlists.iteritems():
-            title = playlist.get_property("name")
-            if not button:
-                self.playlist_id = playlist_id
-            button = Gtk.RadioButton.new_with_label_from_widget(button, title)
-            button.connect("toggled", self.on_button_toggled, playlist_id)
-            id_box.pack_start(button, False, False, 0)
-
-        box = self.get_content_area()
-        box.add(id_box)
-        self.show_all()
-
-    def on_button_toggled(self, button, playlist_id):
-        if button.get_active():
-            self.playlist_id = playlist_id
-        else:
-            self.playlist_id = None
-        print self.playlist_id

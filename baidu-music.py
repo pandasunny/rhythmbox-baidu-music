@@ -39,6 +39,7 @@ from search import SearchHandle
 from dialog import LoginDialog
 from dialog import AddPlaylistDialog
 from dialog import RenamePlaylistDialog
+from dialog import AddToPlaylistDialog
 
 import gettext
 
@@ -50,21 +51,24 @@ POPUP_UI = """
   <toolbar name="CollectSourceToolbar">
     <toolitem name="BaiduMusicLogin" action="BaiduMusicLoginAction"/>
     <toolitem name="Browse" action="ViewBrowser"/>
-    <toolitem name="BaiduMusicSearch" action="BaiduMusicSearchAction"/>
     <toolitem name="BaiduMusicSync" action="BaiduMusicSyncAction"/>
+    <toolitem name="BaiduMusicSearch" action="BaiduMusicSearchAction"/>
+    <toolitem name="BaiduMusicAdd" action="BaiduMusicAddAction"/>
     <!-- <toolitem name="BaiduMusicTest" action="BaiduMusicTestAction"/> -->
   </toolbar>
   <toolbar name="TempSourceToolbar">
     <toolitem name="Browse" action="ViewBrowser"/>
     <toolitem name="BaiduMusicSearch" action="BaiduMusicSearchAction"/>
+    <toolitem name="BaiduMusicAdd" action="BaiduMusicAddAction"/>
     <toolitem name="BaiduMusicCollect" action="BaiduMusicCollectAction"/>
     <!-- <toolitem name="BaiduMusicTest" action="BaiduMusicTestAction"/> -->
   </toolbar>
   <toolbar name="OnlinePlaylistSourceToolbar">
     <toolitem name="Browse" action="ViewBrowser"/>
-    <toolitem name="BaiduMusicSearch" action="BaiduMusicSearchAction"/>
-    <toolitem name="BaiduMusicCollect" action="BaiduMusicCollectAction"/>
     <toolitem name="BaiduMusicSync" action="BaiduMusicSyncAction"/>
+    <toolitem name="BaiduMusicSearch" action="BaiduMusicSearchAction"/>
+    <toolitem name="BaiduMusicAdd" action="BaiduMusicAddAction"/>
+    <toolitem name="BaiduMusicCollect" action="BaiduMusicCollectAction"/>
     <!-- <toolitem name="BaiduMusicTest" action="BaiduMusicTestAction"/> -->
   </toolbar>
   <popup name="CollectSourcePopup">
@@ -371,6 +375,15 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
         action.connect("activate", self.__delete_playlist)
         self.action_group.add_action(action)
 
+        action = Gtk.Action(
+                name="BaiduMusicAddAction",
+                label=_("Add"),
+                tooltip=_("Add songs to a online playlist."),
+                stock_id=None
+                )
+        action.connect("activate", self.__add_to_playlist)
+        self.action_group.add_action(action)
+
         manager.insert_action_group(self.action_group, 0)
         manager.ensure_update()
 
@@ -501,6 +514,33 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
                 playlist = self.playlists[playlist_id]
                 playlist.delete_thyself()
                 del self.playlists[playlist_id]
+        elif response == Gtk.ResponseType.CANCEL:
+            pass
+        dialog.destroy()
+
+    def __add_to_playlist(self, widget):
+        shell = self.object
+        source = shell.props.selected_page
+
+        try:
+            skip_id = source.playlist_id
+        except Exception, e:
+            skip_id = ""
+        entries = source.get_entry_view().get_selected_entries()
+        if not entries:
+            return False
+        song_ids = [int(entry.dup_string(RB.RhythmDBPropType.LOCATION)) \
+                for entry in entries]
+
+        dialog = AddToPlaylistDialog(self.playlists, song_ids, str(skip_id))
+        response = dialog.run()
+        if response == Gtk.ResponseType.OK:
+            playlist_id = dialog.playlist_id
+            if playlist_id:
+                songs_ids = self.client.add_playlist_songs(playlist_id, song_ids)
+                songs = self.client.get_song_info(song_ids)
+                songs.reverse()
+                self.playlists[playlist_id].add(songs)
         elif response == Gtk.ResponseType.CANCEL:
             pass
         dialog.destroy()
