@@ -227,6 +227,7 @@ class BasePlaylist(BaseSource):
     def __init__(self):
         super(BasePlaylist, self).__init__()
         self.popup_widget = None
+        self.index = 0
 
     def do_selected(self):
         if not self.activated:
@@ -290,16 +291,11 @@ class BasePlaylist(BaseSource):
                 delete_ids.append(item)
             elif song_ids[index] == item:
                 add_ids.remove(item)
-        add_ids.reverse()
+        #add_ids.reverse()
 
         # traversal rows in the query model
-        qm = self.get_query_model()
-        if delete_ids:
-            for row in qm:
-                entry = row[0]
-                song_id = int(entry.get_string(RB.RhythmDBPropType.LOCATION))
-                if song_id in delete_ids:
-                    self.remove_entry(entry)
+        for delete_id in delete_ids:
+            self.remove_location(str(delete_id))
 
         if add_ids:
             songs = self.get_songs(add_ids)
@@ -321,7 +317,7 @@ class BasePlaylist(BaseSource):
             songs: A list includes songs.
         """
         if songs:
-            songs.reverse()
+            #songs.reverse()
             self.songs.extend([int(song["songId"]) for song in songs])
             self.add_songs(songs)
 
@@ -338,7 +334,6 @@ class CollectSource(BasePlaylist):
     def __init__(self):
         super(CollectSource, self).__init__()
         self.popup_widget = "/CollectSourcePopup"
-        self.index = 0
 
     def delete_songs(self, song_ids):
         return self.client.remove_favorite_songs(song_ids)
@@ -370,7 +365,9 @@ class OnlinePlaylistSource(BasePlaylist):
         return self.client.delete_playlist_songs(self.playlist_id, song_ids)
 
     def get_song_ids(self):
-        return self.client.get_playlist(self.playlist_id)
+        song_ids = self.client.get_playlist(self.playlist_id)
+        song_ids.reverse()
+        return song_ids
 
 
 class TempSource(BaseSource):

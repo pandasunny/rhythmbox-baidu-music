@@ -180,6 +180,7 @@ class SearchHandle(object):
     def on_collect(self, widget):
         """ Collect all selected songs. """
         songs = self.__client.add_favorite_songs(self.__song_ids)
+        songs.reverse()
         self.__collect_source.add(songs)
 
     def on_play(self, widget):
@@ -200,6 +201,7 @@ class SearchHandle(object):
             if playlist_id:
                 songs_ids = self.__client.add_playlist_songs(playlist_id, song_ids)
                 songs = self.__client.get_song_info(song_ids)
+                songs.reverse()
                 self.__playlists[playlist_id].add(songs)
         elif response == Gtk.ResponseType.CANCEL:
             pass
