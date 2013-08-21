@@ -385,6 +385,7 @@ class Client(object):
         self.__save_cookie()
         self.islogin = False
         logging.info("Logout successed!")
+        return not self.islogin
 
     def __get_cloud_info(self):
         """ Get the information of baidu cloud music.

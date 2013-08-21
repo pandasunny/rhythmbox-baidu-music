@@ -24,7 +24,7 @@ from dialog import AddToPlaylistDialog
 
 class SearchHandle(object):
 
-    def __init__(self, builder, collect_source, client, temp_source, playlists):
+    def __init__(self, builder, client, collect_source, temp_source, playlists):
 
         # the basic objects
         self.__collect_source = collect_source
@@ -51,10 +51,9 @@ class SearchHandle(object):
 
     def __check_buttons_status(self):
         """ check the status of all buttons. """
-
         buttons = []
         if not self.__song_ids:
-            buttons.extend(["collect", "play"])
+            buttons.extend(["collect", "play", "add"])
         if self.__current_page <= 1:
             buttons.extend(["first", "back"])
         if self.__current_page == self.__last_page:
@@ -67,9 +66,14 @@ class SearchHandle(object):
         else:
             self.__page_spinbutton.set_sensitive(True)
 
+        if not self.__client.islogin:
+            buttons.extend(["collect", "add"])
+
+        buttons = list(set(buttons))
+
         all_buttons = [
                 "select_all", "collect", "goto", "play",
-                "first", "back", "forward", "last"
+                "first", "back", "forward", "last", "add"
                 ]
         enable_buttons = [btn for btn in all_buttons if btn not in buttons]
         for btn in enable_buttons:
