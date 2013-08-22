@@ -19,6 +19,8 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+import re
+
 from dialog import AddToPlaylistDialog
 
 
@@ -81,20 +83,25 @@ class SearchHandle(object):
         for btn in buttons:
             self.__builder.get_object(btn+"_button").set_sensitive(False)
 
-    def __refresh(self, songs):
+    def __refresh(self):
         """ Refresh the liststore of view. """
+        pattern = re.compile("</?em>")
+
+        info = self.__client.search(self.__keyword, self.__current_page)
         self.__liststore.clear()
-        for song in songs["songs"]:
+        for song in info["song_list"]:
             self.__liststore.append([
                 False,
-                int(song["id"]) if song["id"] else None,
-                song["title"].decode("utf-8"),
-                song["album"].decode("utf-8"),
-                song["artist"].decode("utf-8"),
-                True if song["id"] else False
+                int(song["song_id"]) if song["song_id"] else None,
+                pattern.sub("", song["title"]),
+                pattern.sub("", song["author"]),
+                pattern.sub("", song["album_title"]),
+                True # TODO: make sure the status of a song
                 ])
-        self.__current_page = songs["page"]
-        self.__last_page = int((songs["count"]+songs["num"]-1)/songs["num"])
+        total = 1000 if int(info["pages"]["total"]) >= 1000 \
+                else int(info["pages"]["total"])
+        num = int(info["pages"]["rn_num"])
+        self.__last_page = (total + num - 1) / num
         self.__total_lable.set_label(str(self.__last_page) + " /")
         self.__page_adjustment.set_value(self.__current_page)
         self.__page_adjustment.set_upper(self.__last_page)
@@ -106,8 +113,8 @@ class SearchHandle(object):
         """ Search the keywords of entry. """
         self.__keyword = self.__search_entry.get_text().strip()
         if self.__keyword:
-            result = self.__client.search(self.__keyword)
-            self.__refresh(result)
+            self.__current_page = 1
+            self.__refresh()
         self.__check_buttons_status()
 
     def on_toggled(self, widget, path):
@@ -151,35 +158,26 @@ class SearchHandle(object):
     def on_first(self, widget):
         """ Go to the first page. """
         if self.__current_page > 1:
-            result = self.__client.search(self.__keyword, 1)
-            self.__refresh(result)
+            self.__current_page = 1
+            self.__refresh()
 
     def on_back(self, widget):
         """ Go to the back page. """
         if self.__current_page > 1:
-            result = self.__client.search(
-                    self.__keyword,
-                    self.__current_page - 1
-                    )
-            self.__refresh(result)
+            self.__current_page -= 1
+            self.__refresh()
 
     def on_forward(self, widget):
         """ Go to the forward page. """
         if self.__current_page < self.__last_page:
-            result = self.__client.search(
-                    self.__keyword,
-                    self.__current_page + 1
-                    )
-            self.__refresh(result)
+            self.__current_page += 1
+            self.__refresh()
 
     def on_last(self, widget):
         """ Go to the last page. """
         if self.__current_page < self.__last_page:
-            result = self.__client.search(
-                    self.__keyword,
-                    self.__last_page
-                    )
-            self.__refresh(result)
+            self.__current_page = self.__last_page
+            self.__refresh()
 
     def on_collect(self, widget):
         """ Collect all selected songs. """
@@ -219,5 +217,5 @@ class SearchHandle(object):
         self.__page_spinbutton.update()
         page = int(self.__page_spinbutton.get_value())
         if page <= self.__last_page:
-            result = self.__client.search(self.__keyword, page)
-            self.__refresh(result)
+            self.__current_page = page
+            self.__refresh()
