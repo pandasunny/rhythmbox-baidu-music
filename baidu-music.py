@@ -24,6 +24,7 @@ import os
 import rb
 from gi.repository import GObject
 from gi.repository import Gio
+from gi.repository import GLib
 from gi.repository import RB
 from gi.repository import Peas
 from gi.repository import PeasGtk
@@ -46,8 +47,14 @@ import gettext
 APPNAME = "rhythmbox-baidu-music"
 gettext.install(APPNAME, RB.locale_dir())
 
+MUSIC_ICON = "music.png"
+HQ_ICON = "hq.png"
+
 POPUP_UI = """
 <ui>
+  <toolbar name="ToolBar">
+    <toolitem name="BaiduMusicSwitch" action="BaiduMusicSwitchAction"/>
+  </toolbar>
   <toolbar name="CollectSourceToolbar">
     <toolitem name="BaiduMusicLogin" action="BaiduMusicLoginAction"/>
     <toolitem name="Browse" action="ViewBrowser"/>
@@ -183,7 +190,7 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
 
         # create the temp source
         icon = GdkPixbuf.Pixbuf.new_from_file_at_size(
-                rb.find_plugin_file(self, "music.png"), width, height)
+                rb.find_plugin_file(self, MUSIC_ICON), width, height)
 
         self.temp_source = GObject.new(
                 TempSource,
@@ -398,6 +405,21 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
         action.connect("activate", self.__add_to_playlist_action)
         self.action_group.add_action(action)
 
+        # the action about toggling the hq status
+        action = Gtk.ToggleAction(
+                name="BaiduMusicSwitchAction",
+                label=_("HQ"),
+                tooltip=_("Switch to HQ music or not."),
+                stock_id=None
+                )
+        icon = Gio.FileIcon.new(Gio.File.new_for_path(
+            rb.find_plugin_file(self, HQ_ICON)
+            ))
+        action.set_gicon(icon)
+        action.set_active(self.settings.get_boolean("hq"))
+        action.connect("toggled", self.__switch_hq_action)
+        self.action_group.add_action(action)
+
         manager.insert_action_group(self.action_group, 0)
         manager.ensure_update()
 
@@ -601,6 +623,9 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
             pass
         dialog.destroy()
 
+    def __switch_hq_action(self, widget):
+        self.settings["hq"] = widget.get_active()
+
 
 class BaiduMusicEntryType(RB.RhythmDBEntryType):
 
@@ -618,12 +643,14 @@ class BaiduMusicEntryType(RB.RhythmDBEntryType):
         artist = entry.get_string(RB.RhythmDBPropType.ARTIST)
         title = entry.get_string(RB.RhythmDBPropType.TITLE)
         songinfo = self.client.get_song_links(
-                [song_id], [artist], [title]
+                [song_id], False, self.settings.get_boolean("hq")
                 )
-        song = songinfo[0]["fileslist"][0]
-        db.entry_set(entry, RB.RhythmDBPropType.DURATION, song["time"])
+        song = songinfo[0]["file_list"][0]
+        lyric = songinfo[0]["lyric_url"]
+
+        db.entry_set(entry, RB.RhythmDBPropType.DURATION, song["duration"])
         db.entry_set(entry, RB.RhythmDBPropType.FILE_SIZE, song["size"])
-        db.entry_set(entry, RB.RhythmDBPropType.BITRATE, song["rate"])
+        db.entry_set(entry, RB.RhythmDBPropType.BITRATE, song["kbps"])
 
         def save_lyric_cb(data):
             path = os.path.expanduser(self.settings["lyric-path"])
@@ -632,11 +659,11 @@ class BaiduMusicEntryType(RB.RhythmDBEntryType):
                 lyric.write(data)
                 lyric.close()
 
-        if song["lrcLink"]:
+        if lyric:
             loader =  rb.Loader()
-            loader.get_url(song["lrcLink"], save_lyric_cb)
+            loader.get_url(lyric, save_lyric_cb)
 
-        return song["songLink"]
+        return song["url"]
 
     def do_can_sync_metadata(self, entry):
         return True

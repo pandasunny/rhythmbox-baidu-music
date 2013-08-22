@@ -15,6 +15,11 @@
             <summary>Lyric dir</summary>
             <description>The dir of lyrics</description>
         </key>
+        <key name="hq" type="b">
+            <default>false</default>
+            <summary>HQ music</summary>
+            <description>the status of HQ music</description>
+        </key>
         <child name="source" schema="org.gnome.rhythmbox.source"/>
     </schema>
 </schemalist>

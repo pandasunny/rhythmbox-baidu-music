@@ -49,6 +49,7 @@ CROSSDOMAIN_URL = "http://user.hao123.com/static/crossdomain.php?"
 TTPLAYER_URL = "http://qianqianmini.baidu.com"
 MUSICBOX_URL = "http://play.baidu.com"
 TINGAPI_URL = "http://tingapi.ting.baidu.com"
+MUSICMINI_URL = "http://musicmini.baidu.com"
 #REFERER_URL = "http://qianqianmini.baidu.com/app/passport/passport_phoenix.html"
 #CROSSDOMAIN_REFERER_URL = "http://qianqianmini.baidu.com/app/passport/index.htm"
 
@@ -480,48 +481,55 @@ class Client(object):
             return result
         return False
 
-    def get_song_links(self, song_ids, artist=[], title=[], link_type="stream"):
+    def get_song_links(self, song_ids, link_type=False, is_hq=False):
         """ Get the informations about song's links.
 
         Args:
             song_ids: A list includes the song ids.
-            artist: A list includes the song's artists.
-            title: A list includes the song's titles.
-            link_type: A string about link which be got, stream or all.
+            link_type: A boolean about link which be got.
+            is_hq: A boolean.
 
         Returns:
-            A dict is the response which is as follows:
-            {
-                albumName: the album title,
-                artist: the artist of song,
-                songID: the song id,
-                title: the song title,
-                URL: the URL which be shown,
-                fileslist: [{
-                    album_pic_small: the small cover,
-                    expiretimespan: unknown,
-                    fileID: the file id,
-                    format: the format of file such as mp3, flac and so on,
-                    hash: the hash of file,
-                    lrclink: the lyric url,
-                    rate: the rate of file,
-                    resource_type: unknown,
-                    size: the size of file,
-                    songLink: the url of song,
-                    songShowLink: the shown url of song,
-                    static: unknown,
-                    time: the time of song
-                }, ... ]
-            }
+            A list is the response which is as follows:
+            [{
+                song_id: (int)the song id,
+                song_title: (str)the song title,
+                append: (null),
+                song_artist: (str)artist,
+                album_title: (str)album title,
+                album_image_url: (null),
+                lyric_url: (str)lyric file url,
+                version: (null),
+                copy_type: (str)unknown(1),
+                resource_source: (str)source,
+                has_mv: (str)undefined,
+                file_list: [{
+                    file_id: (int)file id,
+                    url: (str)the song url,
+                    display_url: (str)the song display url,
+                    format: (str)format(ma3, flac),
+                    hash: (str)hash,
+                    size: (int)filesize,
+                    kbps: (int)rate,
+                    duration: (int)time,
+                    url_expire_time: (int)expire time,
+                    is_hq: (int)is HQ file
+                }, ...]
+            }, ...]
         """
-        url = TTPLAYER_URL + "/app/link/getLinks.php?"
+        artist = title = []
+        url = MUSICMINI_URL + "/app/link/getLinks.php?"
         params = {
             "songId": "@@".join(map(str, song_ids)),
             "songArtist": "@@".join(artist),
             "songTitle": "@@".join(title),
-            "linkType": {"stream": 0, "all": 1}.get(link_type),
+            "songAppend": "",
+            "linkType": int(link_type),
             "isLogin": int(self.islogin),
-            "clientVer": self.CLIENTVER
+            "clientVer": self.CLIENTVER,
+            "isHq": int(is_hq),
+            "isCloud": 0,
+            "hasMV": "undefined"
             }
         response = json.loads(self.__request(url, "GET", params))
         return response
