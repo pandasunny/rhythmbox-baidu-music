@@ -47,48 +47,47 @@ import gettext
 APPNAME = "rhythmbox-baidu-music"
 gettext.install(APPNAME, RB.locale_dir())
 
-MUSIC_ICON = "music.png"
-HQ_ICON = "hq.png"
+BAIDU_MUSIC_ICON = "images/baidu-music.png"
+TEMP_ICON = "images/temporary.png"
+COLLECT_ICON = "images/collect.png"
+PLAYLIST_ICON = "images/playlist.png"
+HQ_ICON = "images/hq.png"
 
 POPUP_UI = """
 <ui>
   <toolbar name="ToolBar">
+    <toolitem name="BaiduMusicSearch" action="BaiduMusicSearchAction"/>
     <toolitem name="BaiduMusicSwitch" action="BaiduMusicSwitchAction"/>
   </toolbar>
   <toolbar name="CollectSourceToolbar">
     <toolitem name="BaiduMusicLogin" action="BaiduMusicLoginAction"/>
     <toolitem name="Browse" action="ViewBrowser"/>
-    <toolitem name="BaiduMusicSearch" action="BaiduMusicSearchAction"/>
-    <toolitem name="BaiduMusicSync" action="BaiduMusicSyncAction"/>
+    <toolitem name="BaiduMusicRefresh" action="BaiduMusicRefreshAction"/>
     <toolitem name="BaiduMusicAdd" action="BaiduMusicAddAction"/>
     <!-- <toolitem name="BaiduMusicTest" action="BaiduMusicTestAction"/> -->
   </toolbar>
   <toolbar name="TempSourceToolbar">
     <toolitem name="Browse" action="ViewBrowser"/>
-    <toolitem name="BaiduMusicSearch" action="BaiduMusicSearchAction"/>
     <toolitem name="BaiduMusicAdd" action="BaiduMusicAddAction"/>
     <toolitem name="BaiduMusicCollect" action="BaiduMusicCollectAction"/>
     <!-- <toolitem name="BaiduMusicTest" action="BaiduMusicTestAction"/> -->
   </toolbar>
   <toolbar name="OnlinePlaylistSourceToolbar">
     <toolitem name="Browse" action="ViewBrowser"/>
-    <toolitem name="BaiduMusicSync" action="BaiduMusicSyncAction"/>
-    <toolitem name="BaiduMusicSearch" action="BaiduMusicSearchAction"/>
+    <toolitem name="BaiduMusicRefresh" action="BaiduMusicRefreshAction"/>
     <toolitem name="BaiduMusicAdd" action="BaiduMusicAddAction"/>
     <toolitem name="BaiduMusicCollect" action="BaiduMusicCollectAction"/>
     <!-- <toolitem name="BaiduMusicTest" action="BaiduMusicTestAction"/> -->
   </toolbar>
   <popup name="CollectSourcePopup">
-    <menuitem name="BaiduMusicSync" action="BaiduMusicSyncAction"/>
-    <separator />
+    <menuitem name="BaiduMusicRefresh" action="BaiduMusicRefreshAction"/>
     <menuitem name="BaiduMusicPlaylistAdd" action="BaiduMusicPlaylistAddAction"/>
   </popup>
   <popup name="OnlinePlaylistPopup">
-    <menuitem name="BaiduMusicSync" action="BaiduMusicSyncAction"/>
-    <menuitem name="BaiduMusicPlaylistRename" action="BaiduMusicPlaylistRenameAction"/>
-    <menuitem name="BaiduMusicPlaylistDelete" action="BaiduMusicPlaylistDeleteAction"/>
-    <separator />
     <menuitem name="BaiduMusicPlaylistAdd" action="BaiduMusicPlaylistAddAction"/>
+    <menuitem name="BaiduMusicPlaylistDelete" action="BaiduMusicPlaylistDeleteAction"/>
+    <menuitem name="BaiduMusicPlaylistRename" action="BaiduMusicPlaylistRenameAction"/>
+    <menuitem name="BaiduMusicRefresh" action="BaiduMusicRefreshAction"/>
   </popup>
 </ui>
 """
@@ -182,16 +181,12 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
                     shell=shell,
                     id="baidu-music",
                     name=_("Baidu Music"),
-                    #pixbuf=baidu_icon,
                     category=RB.DisplayPageGroupType.TRANSIENT,
                     )
         shell.append_display_page(page_group, None)
                 #RB.DisplayPageGroup.get_by_id("stores"))
 
         # create the temp source
-        icon = GdkPixbuf.Pixbuf.new_from_file_at_size(
-                rb.find_plugin_file(self, MUSIC_ICON), width, height)
-
         self.temp_source = GObject.new(
                 TempSource,
                 name=_("Temporary"),
@@ -202,12 +197,13 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
                 toolbar_path="/TempSourceToolbar",
                 is_local=False,
                 )
+        icon = GdkPixbuf.Pixbuf.new_from_file_at_size(
+                rb.find_plugin_file(self, TEMP_ICON), width, height
+                )
         self.temp_source.set_property("pixbuf", icon)
         shell.append_display_page(self.temp_source, page_group)
 
         # create the collect source
-        icon = GdkPixbuf.Pixbuf.new_from_file_at_size(
-                rb.find_plugin_file(self, "favorite.png"), width, height)
         self.collect_source = GObject.new(
                 CollectSource,
                 name=_("My Collect"),
@@ -218,14 +214,14 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
                 toolbar_path="/CollectSourceToolbar",
                 is_local=False,
                 )
+        icon = GdkPixbuf.Pixbuf.new_from_file_at_size(
+                rb.find_plugin_file(self, COLLECT_ICON), width, height
+                )
         self.collect_source.set_property("pixbuf", icon)
         shell.append_display_page(self.collect_source, page_group)
         shell.register_entry_type_for_source(self.collect_source, self.entry_type)
 
         # Add a page_group which includes all online playlists
-        icon = Gtk.IconTheme.get_default().load_icon(
-                "audio-x-mp3-playlist", width,
-                Gtk.IconLookupFlags.GENERIC_FALLBACK)
         playlist_page_group = RB.DisplayPageGroup.get_by_id("baidu-music-playlists")
         if not playlist_page_group:
             playlist_page_group = RB.DisplayPageGroup(
@@ -234,6 +230,9 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
                     name=_("Online Playlists"),
                     category=RB.DisplayPageGroupType.TRANSIENT,
                     )
+        icon = GdkPixbuf.Pixbuf.new_from_file_at_size(
+                rb.find_plugin_file(self, PLAYLIST_ICON), width, height
+                )
         playlist_page_group.set_property("pixbuf", icon)
         shell.append_display_page(playlist_page_group, page_group)
 
@@ -310,11 +309,15 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
         # the search action
         action = Gtk.Action(
                 name="BaiduMusicSearchAction",
-                label=_("Search"),
+                label=_("Search Music"),
                 tooltip=_("Search music from the baidu music."),
-                stock_id=Gtk.STOCK_FIND
+                stock_id=None
                 )
-        action.connect("activate", self.__search_action)
+        icon = Gio.FileIcon.new(Gio.File.new_for_path(
+            rb.find_plugin_file(self, BAIDU_MUSIC_ICON)
+            ))
+        action.set_gicon(icon)
+        action.connect("activate", self.__action_search)
         self.action_group.add_action(action)
 
         # the user login or logout action
@@ -332,17 +335,17 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
                     tooltip=_("Sign in the baidu music."),
                     stock_id=None
                     )
-        action.connect("activate", self.__user_action)
+        action.connect("activate", self.__action_user)
         self.action_group.add_action(action)
 
-        # the sync action
+        # the Refresh action
         action = Gtk.Action(
-                name="BaiduMusicSyncAction",
-                label=_("Synchronize"),
-                tooltip=_("Synchronize data."),
+                name="BaiduMusicRefreshAction",
+                label=_("Refresh"),
+                tooltip=_("Refresh the song list."),
                 stock_id=None
                 )
-        action.connect("activate", lambda a: shell.props.selected_page.sync())
+        action.connect("activate", lambda a: shell.props.selected_page.refresh())
         self.action_group.add_action(action)
 
         # the test action
@@ -362,17 +365,17 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
                 tooltip=_("Collect all selected songs."),
                 stock_id=None
                 )
-        action.connect("activate", self.__collect_action)
+        action.connect("activate", self.__action_collect)
         self.action_group.add_action(action)
 
         # the action about adding a playlist
         action = Gtk.Action(
                 name="BaiduMusicPlaylistAddAction",
-                label=_("Add new playlist"),
+                label=_("New playlist"),
                 tooltip=_("Add new online playlist."),
                 stock_id=None
                 )
-        action.connect("activate", self.__add_playlist_action)
+        action.connect("activate", self.__action_add_playlist)
         self.action_group.add_action(action)
 
         # the action about renaming a playlist
@@ -382,17 +385,17 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
                 tooltip=_("Rename the title of playlist."),
                 stock_id=None
                 )
-        action.connect("activate", self.__rename_playlist_action)
+        action.connect("activate", self.__action_rename_playlist)
         self.action_group.add_action(action)
 
         # the action about deleting a playlist
         action = Gtk.Action(
                 name="BaiduMusicPlaylistDeleteAction",
-                label=_("Delete"),
+                label=_("Delete playlist"),
                 tooltip=_("Delete this playlist."),
                 stock_id=None
                 )
-        action.connect("activate", self.__delete_playlist_action)
+        action.connect("activate", self.__action_delete_playlist)
         self.action_group.add_action(action)
 
         # the action about adding songs to a playlist
@@ -402,7 +405,7 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
                 tooltip=_("Add songs to a online playlist."),
                 stock_id=None
                 )
-        action.connect("activate", self.__add_to_playlist_action)
+        action.connect("activate", self.__action_add_to_playlist)
         self.action_group.add_action(action)
 
         # the action about toggling the hq status
@@ -417,7 +420,7 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
             ))
         action.set_gicon(icon)
         action.set_active(self.settings.get_boolean("hq"))
-        action.connect("toggled", self.__switch_hq_action)
+        action.connect("toggled", self.__action_toggle_hq)
         self.action_group.add_action(action)
 
         manager.insert_action_group(self.action_group, 0)
@@ -431,15 +434,15 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
         widgets = [
                 manager.get_widget("/TempSourceToolbar/BaiduMusicCollect"),
                 manager.get_widget("/TempSourceToolbar/BaiduMusicAdd"),
-                manager.get_widget("/CollectSourceToolbar/BaiduMusicSync"),
+                manager.get_widget("/CollectSourceToolbar/BaiduMusicRefresh"),
                 manager.get_widget("/CollectSourceToolbar/BaiduMusicAdd"),
-                manager.get_widget("/CollectSourcePopup/BaiduMusicSync"),
+                manager.get_widget("/CollectSourcePopup/BaiduMusicRefresh"),
                 manager.get_widget("/CollectSourcePopup/BaiduMusicPlaylistAdd"),
                 ]
         for widget in widgets:
             widget.set_sensitive(self.client.islogin)
 
-    def __search_action(self, widget):
+    def __action_search(self, widget):
         """ Show the search box window """
         if not self.__search_window:
             builder = Gtk.Builder()
@@ -464,15 +467,15 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
                     )
         self.__search_window.show_all()
 
-    def __user_action(self, widget):
+    def __action_user(self, widget):
         """ Login or logout action. """
         if self.client.islogin:
-            self.__logout_action(widget)
+            self.__action_logout(widget)
         else:
-            self.__login_action(widget)
+            self.__action_login(widget)
         self.__set_ui_status()
 
-    def __login_action(self, widget):
+    def __action_login(self, widget):
         """ Login action. """
         # create the login dialog
         dialog = LoginDialog()
@@ -499,7 +502,7 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
             pass
         dialog.destroy()
 
-    def __logout_action(self, widget):
+    def __action_logout(self, widget):
         """ Logout action. """
         # create the logout dialog
         dialog = Gtk.MessageDialog(
@@ -526,7 +529,7 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
             widget.set_tooltip(_("Sign in the baidu music."))
         dialog.destroy()
 
-    def __collect_action(self, widget):
+    def __action_collect(self, widget):
         """ Add songs to the collect list. """
         shell = self.object
         entry_view = shell.props.selected_page.get_entry_view()
@@ -537,7 +540,7 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
         if self.collect_source.activated and songs:
             self.collect_source.add(songs)
 
-    def __add_playlist_action(self, widget):
+    def __action_add_playlist(self, widget):
         """ Add a playlist with custom title. """
         dialog = AddPlaylistDialog()
         response = dialog.run()
@@ -554,7 +557,7 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
             pass
         dialog.destroy()
 
-    def __rename_playlist_action(self, widget):
+    def __action_rename_playlist(self, widget):
         """ Rename a playlist. """
         shell = self.object
         old_title = shell.props.selected_page.get_property("name")
@@ -574,7 +577,7 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
             pass
         dialog.destroy()
 
-    def __delete_playlist_action(self, widget):
+    def __action_delete_playlist(self, widget):
         """ Delete a playlist. """
         shell = self.object
         playlist_id = shell.props.selected_page.playlist_id
@@ -593,7 +596,7 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
             pass
         dialog.destroy()
 
-    def __add_to_playlist_action(self, widget):
+    def __action_add_to_playlist(self, widget):
         """ Add songs to a online playlist. """
         shell = self.object
         source = shell.props.selected_page
@@ -623,7 +626,7 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
             pass
         dialog.destroy()
 
-    def __switch_hq_action(self, widget):
+    def __action_toggle_hq(self, widget):
         self.settings["hq"] = widget.get_active()
 
 

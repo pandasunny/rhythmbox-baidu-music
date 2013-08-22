@@ -277,8 +277,8 @@ class BasePlaylist(BaseSource):
         thread = threading.Thread(target=self.load_cb)
         thread.start()
 
-    def sync_cb(self):
-        """ The callback function of sync all songs. """
+    def refresh_cb(self):
+        """ The callback function of refresh all songs. """
         self.updating = True
         song_ids = self.get_song_ids()
 
@@ -305,9 +305,9 @@ class BasePlaylist(BaseSource):
         self.updating = False
         self.notify_status_changed()
 
-    def sync(self):
-        """ The thread function of sync all songs. """
-        thread = threading.Thread(target=self.sync_cb)
+    def refresh(self):
+        """ The thread function of refresh all songs. """
+        thread = threading.Thread(target=self.refresh_cb)
         thread.start()
 
     def add(self, songs):
