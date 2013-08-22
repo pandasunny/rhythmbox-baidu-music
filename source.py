@@ -336,7 +336,7 @@ class CollectSource(BasePlaylist):
         self.popup_widget = "/CollectSourcePopup"
 
     def delete_songs(self, song_ids):
-        return self.client.remove_favorite_songs(song_ids)
+        return self.client.delete_collect_songs(song_ids)
 
     def get_song_ids(self):
         self.status = _("Loading song IDs...")

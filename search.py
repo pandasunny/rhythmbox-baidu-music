@@ -183,9 +183,12 @@ class SearchHandle(object):
 
     def on_collect(self, widget):
         """ Collect all selected songs. """
-        songs = self.__client.add_favorite_songs(self.__song_ids)
-        songs.reverse()
-        self.__collect_source.add(songs)
+        song_ids = self.__client.add_collect_songs(self.__song_ids)
+        if song_ids:
+            song_ids = [song_ids] if isinstance(song_ids, int) else song_ids
+            songs = self.__client.get_song_info(song_ids)
+            songs.reverse()
+            self.__collect_source.add(songs)
 
     def on_play(self, widget):
         """ Play all selected songs. """

@@ -606,51 +606,57 @@ class Client(object):
             result = {}
         return result
 
-    def add_favorite_songs(self, song_ids):
-        """ Add some songs from baidu cloud.
+    def add_collect_songs(self, song_ids):
+        """ Add songs to the collect list.
 
         Args:
-            song_ids: A list includes all ids of songs.
+            song_ids: A list of songs.
 
         Returns:
-            A boolean "False" or a list includes the dicts of song.
+            A list of songs which were been added. Or False when failed.
         """
-        url = MUSICBOX_URL + "/data/user/collect"
+        url = TINGAPI_URL + "/v1/restserver/ting?"
         params = {
-            "ids": ",".join(map(str, song_ids)),
-            "type": "song",
-            "cloud_type": 0
+                "method": "baidu.ting.favorite.addSongFavorites",
+                "format": "json",
+                "from": "bmpc",
+                "version": "1.0.0",
+                "bduss": self.__bduss,
+                "songId": ",".join(map(str, song_ids))
             }
-        headers = {"Referer": "http://play.baidu.com/"}
+        headers = {
+                "Referer": "http://pc.music.baidu.com",
+                "User-Agent": "bmpc_1.0.0"
+                }
 
-        response = json.loads(self.__request(url, "POST", params, headers))
-        if response["errorCode"] == 22000:
-            ids = response["data"]["collectIds"]
-            ids = [ids] if isinstance(ids, int) else ids
-            if ids:
-                logging.debug("The successful collection of songs: %s", str(ids))
-                return self.get_song_info(ids)
-        return False
+        response = json.loads(self.__request(url, "GET", params, headers))
+        return response["result"] if response["error_code"] == 22000 else False
 
-    def remove_favorite_songs(self, song_ids):
-        """ Remove some songs from baidu cloud.
+    def delete_collect_songs(self, song_ids):
+        """ Remove songs from the collect list.
 
         Args:
-            song_ids: A list includes all ids of songs.
+            song_ids: A list of songs.
 
         Returns:
             A boolean.
         """
-        url = MUSICBOX_URL + "/data/user/deletecollectsong"
+        url = TINGAPI_URL + "/v1/restserver/ting?"
         params = {
-            "songIds": ",".join(map(str, song_ids)),
-            "type": "song"
+                "method": "baidu.ting.favorite.delCollectSong",
+                "format": "json",
+                "from": "bmpc",
+                "version": "1.0.0",
+                "bduss": self.__bduss,
+                "songId": ",".join(map(str, song_ids))
             }
+        headers = {
+                "Referer": "http://pc.music.baidu.com",
+                "User-Agent": "bmpc_1.0.0"
+                }
 
-        response = json.loads(self.__request(url, "POST", params))
-        result = True if response["errorCode"] == 22000 else False
-        logging.debug("The deleted collection of songs: %s", str(song_ids))
-        return result
+        response = json.loads(self.__request(url, "GET", params, headers))
+        return True if response["error_code"] == 22000 else False
 
     # playlist information
     def get_playlists(self, page_no=0, page_size=50):
