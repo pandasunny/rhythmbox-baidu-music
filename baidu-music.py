@@ -47,51 +47,15 @@ import gettext
 APPNAME = "rhythmbox-baidu-music"
 gettext.install(APPNAME, RB.locale_dir())
 
+# icon files
 BAIDU_MUSIC_ICON = "images/baidu-music.png"
-TEMP_ICON = "images/temporary.png"
 COLLECT_ICON = "images/collect.png"
-PLAYLIST_ICON = "images/playlist.png"
 HQ_ICON = "images/hq.png"
 
-POPUP_UI = """
-<ui>
-  <toolbar name="ToolBar">
-    <toolitem name="BaiduMusicSearch" action="BaiduMusicSearchAction"/>
-    <toolitem name="BaiduMusicSwitch" action="BaiduMusicSwitchAction"/>
-  </toolbar>
-  <toolbar name="CollectSourceToolbar">
-    <toolitem name="BaiduMusicLogin" action="BaiduMusicLoginAction"/>
-    <toolitem name="Browse" action="ViewBrowser"/>
-    <toolitem name="BaiduMusicRefresh" action="BaiduMusicRefreshAction"/>
-    <toolitem name="BaiduMusicAdd" action="BaiduMusicAddAction"/>
-    <!-- <toolitem name="BaiduMusicTest" action="BaiduMusicTestAction"/> -->
-  </toolbar>
-  <toolbar name="TempSourceToolbar">
-    <toolitem name="Browse" action="ViewBrowser"/>
-    <toolitem name="BaiduMusicAdd" action="BaiduMusicAddAction"/>
-    <toolitem name="BaiduMusicCollect" action="BaiduMusicCollectAction"/>
-    <!-- <toolitem name="BaiduMusicTest" action="BaiduMusicTestAction"/> -->
-  </toolbar>
-  <toolbar name="OnlinePlaylistSourceToolbar">
-    <toolitem name="Browse" action="ViewBrowser"/>
-    <toolitem name="BaiduMusicRefresh" action="BaiduMusicRefreshAction"/>
-    <toolitem name="BaiduMusicAdd" action="BaiduMusicAddAction"/>
-    <toolitem name="BaiduMusicCollect" action="BaiduMusicCollectAction"/>
-    <!-- <toolitem name="BaiduMusicTest" action="BaiduMusicTestAction"/> -->
-  </toolbar>
-  <popup name="CollectSourcePopup">
-    <menuitem name="BaiduMusicRefresh" action="BaiduMusicRefreshAction"/>
-    <menuitem name="BaiduMusicPlaylistAdd" action="BaiduMusicPlaylistAddAction"/>
-  </popup>
-  <popup name="OnlinePlaylistPopup">
-    <menuitem name="BaiduMusicPlaylistAdd" action="BaiduMusicPlaylistAddAction"/>
-    <menuitem name="BaiduMusicPlaylistDelete" action="BaiduMusicPlaylistDeleteAction"/>
-    <menuitem name="BaiduMusicPlaylistRename" action="BaiduMusicPlaylistRenameAction"/>
-    <menuitem name="BaiduMusicRefresh" action="BaiduMusicRefreshAction"/>
-  </popup>
-</ui>
-"""
-
+# ui files
+POPUP_UI = "popup-ui.xml"
+SEARCH_UI = "search.ui"
+PREFS_UI = "baidu-music-prefs.ui"
 
 class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
     __gtype_name__ = "BaiduMusicPlugin"
@@ -197,9 +161,12 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
                 toolbar_path="/TempSourceToolbar",
                 is_local=False,
                 )
-        icon = GdkPixbuf.Pixbuf.new_from_file_at_size(
-                rb.find_plugin_file(self, TEMP_ICON), width, height
-                )
+        icon = Gtk.IconTheme.get_default().load_icon(
+                "audio-x-generic", width,
+                Gtk.IconLookupFlags.GENERIC_FALLBACK)
+        #icon = GdkPixbuf.Pixbuf.new_from_file_at_size(
+                #rb.find_plugin_file(self, TEMP_ICON), width, height
+                #)
         self.temp_source.set_property("pixbuf", icon)
         shell.append_display_page(self.temp_source, page_group)
 
@@ -230,9 +197,12 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
                     name=_("Online Playlists"),
                     category=RB.DisplayPageGroupType.TRANSIENT,
                     )
-        icon = GdkPixbuf.Pixbuf.new_from_file_at_size(
-                rb.find_plugin_file(self, PLAYLIST_ICON), width, height
-                )
+        icon = Gtk.IconTheme.get_default().load_icon(
+                "audio-x-mp3-playlist", width,
+                Gtk.IconLookupFlags.GENERIC_FALLBACK)
+        #icon = GdkPixbuf.Pixbuf.new_from_file_at_size(
+                #rb.find_plugin_file(self, PLAYLIST_ICON), width, height
+                #)
         playlist_page_group.set_property("pixbuf", icon)
         shell.append_display_page(playlist_page_group, page_group)
 
@@ -303,7 +273,8 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
 
         # setup the menu in the source
         manager = shell.props.ui_manager
-        self.ui_id = manager.add_ui_from_string(POPUP_UI)
+        popup_file = rb.find_plugin_file(self, POPUP_UI)
+        self.ui_id = manager.add_ui_from_file(popup_file)
         self.action_group = Gtk.ActionGroup(name="BaiduMusicPluginActions")
 
         # the search action
@@ -438,6 +409,7 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
                 manager.get_widget("/CollectSourceToolbar/BaiduMusicAdd"),
                 manager.get_widget("/CollectSourcePopup/BaiduMusicRefresh"),
                 manager.get_widget("/CollectSourcePopup/BaiduMusicPlaylistAdd"),
+                manager.get_widget("/TempSourcePopup/BaiduMusicPlaylistAdd"),
                 ]
         for widget in widgets:
             widget.set_sensitive(self.client.islogin)
@@ -447,7 +419,7 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
         if not self.__search_window:
             builder = Gtk.Builder()
             builder.set_translation_domain(APPNAME)
-            builder.add_from_file(rb.find_plugin_file(self, "search.ui"))
+            builder.add_from_file(rb.find_plugin_file(self, SEARCH_UI))
 
             self.__search_window = builder.get_object("search_window")
             self.__search_window.set_icon_from_file(
@@ -685,7 +657,7 @@ class BaiduMusicConfigDialog(GObject.Object, PeasGtk.Configurable):
 
         builder = Gtk.Builder()
         builder.set_translation_domain(APPNAME)
-        builder.add_from_file(rb.find_plugin_file(self, "baidu-music-prefs.ui"))
+        builder.add_from_file(rb.find_plugin_file(self, PREFS_UI))
         self.config_dialog = builder.get_object("config")
 
         self.lyricdir_entry = builder.get_object("lyricdir_entry")

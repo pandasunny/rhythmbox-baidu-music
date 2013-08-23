@@ -1,0 +1,39 @@
+<ui>
+    <toolbar name="ToolBar">
+        <toolitem name="BaiduMusicSearch" action="BaiduMusicSearchAction"/>
+        <toolitem name="BaiduMusicSwitch" action="BaiduMusicSwitchAction"/>
+    </toolbar>
+    <toolbar name="CollectSourceToolbar">
+        <toolitem name="BaiduMusicLogin" action="BaiduMusicLoginAction"/>
+        <toolitem name="Browse" action="ViewBrowser"/>
+        <toolitem name="BaiduMusicRefresh" action="BaiduMusicRefreshAction"/>
+        <toolitem name="BaiduMusicAdd" action="BaiduMusicAddAction"/>
+        <!-- <toolitem name="BaiduMusicTest" action="BaiduMusicTestAction"/> -->
+    </toolbar>
+    <toolbar name="TempSourceToolbar">
+        <toolitem name="Browse" action="ViewBrowser"/>
+        <toolitem name="BaiduMusicAdd" action="BaiduMusicAddAction"/>
+        <toolitem name="BaiduMusicCollect" action="BaiduMusicCollectAction"/>
+        <!-- <toolitem name="BaiduMusicTest" action="BaiduMusicTestAction"/> -->
+    </toolbar>
+    <toolbar name="OnlinePlaylistSourceToolbar">
+        <toolitem name="Browse" action="ViewBrowser"/>
+        <toolitem name="BaiduMusicRefresh" action="BaiduMusicRefreshAction"/>
+        <toolitem name="BaiduMusicAdd" action="BaiduMusicAddAction"/>
+        <toolitem name="BaiduMusicCollect" action="BaiduMusicCollectAction"/>
+        <!-- <toolitem name="BaiduMusicTest" action="BaiduMusicTestAction"/> -->
+    </toolbar>
+    <popup name="TempSourcePopup">
+        <menuitem name="BaiduMusicPlaylistAdd" action="BaiduMusicPlaylistAddAction"/>
+    </popup>
+    <popup name="CollectSourcePopup">
+        <menuitem name="BaiduMusicRefresh" action="BaiduMusicRefreshAction"/>
+        <menuitem name="BaiduMusicPlaylistAdd" action="BaiduMusicPlaylistAddAction"/>
+    </popup>
+    <popup name="OnlinePlaylistPopup">
+        <menuitem name="BaiduMusicPlaylistAdd" action="BaiduMusicPlaylistAddAction"/>
+        <menuitem name="BaiduMusicPlaylistDelete" action="BaiduMusicPlaylistDeleteAction"/>
+        <menuitem name="BaiduMusicPlaylistRename" action="BaiduMusicPlaylistRenameAction"/>
+        <menuitem name="BaiduMusicRefresh" action="BaiduMusicRefreshAction"/>
+    </popup>
+</ui>

@@ -374,9 +374,13 @@ class TempSource(BaseSource):
 
     def __init__(self):
         super(TempSource, self).__init__()
+        self.popup_widget = "/TempSourcePopup"
 
     def do_selected(self):
         if not self.activated:
+            # setup the popup menu
+            shell = self.props.shell
+            self.popup = shell.props.ui_manager.get_widget(self.popup_widget)
 
             self.set_entry_view()
 
