@@ -46,7 +46,6 @@ time.gmtime=warp_gm_time(time.gmtime)
 
 PASSPORT_URL = "https://passport.baidu.com"
 CROSSDOMAIN_URL = "http://user.hao123.com/static/crossdomain.php?"
-TTPLAYER_URL = "http://qianqianmini.baidu.com"
 MUSICBOX_URL = "http://play.baidu.com"
 TINGAPI_URL = "http://tingapi.ting.baidu.com"
 MUSICMINI_URL = "http://musicmini.baidu.com"
@@ -72,7 +71,8 @@ class Client(object):
     def __init__(self, cookie="", debug=False):
         """ Initialize the baidu music client class. """
 
-        self.CLIENTVER = "7.0.4"    # TTPlayer"s client version 
+        #self.CLIENTVER = "7.0.4"    # TTPlayer"s client version 
+        self.CLIENTVER = "8.1.0.8"  # BaiduMusic"s client version 
         self.APIVER = "v3"          # Baidu Music API version 3
         self.TPL = "qianqian"       # The template of TTPlayer
 
@@ -85,9 +85,9 @@ class Client(object):
         #self.__cloud = {}           # the cloud information dict
         self.total = 0              # the count of songs in collect list
 
-        if debug:
-            logging.basicConfig(format="%(asctime)s - %(levelname)s - \
-                    %(message)s", level=logging.DEBUG)
+        #if debug:
+            #logging.basicConfig(format="%(asctime)s - %(levelname)s - \
+                    #%(message)s", level=logging.DEBUG)
 
         # If the param "cookie" is a filename, create a cookiejar with the file
         # and check the cookie to comfire whether the client has logged on.
@@ -228,6 +228,7 @@ class Client(object):
             "apiver": self.APIVER,
             "tt": int(time.time()),
             "class": "login",
+            "logintype": "basicLogin",
             "callback": ""
             }
         url = PASSPORT_URL + "/v2/api/?getapi&"
@@ -307,7 +308,7 @@ class Client(object):
         """
         url = PASSPORT_URL + "/v2/api/?login"
         params = {
-            "staticpage": TTPLAYER_URL + "/app/passport/jump1.html",
+            "staticpage": MUSICMINI_URL + "/app/passport/jump.html",
             "charset": "utf-8",
             "token": self.__token,
             "tpl": self.TPL,
@@ -317,6 +318,7 @@ class Client(object):
             "isphone": "false",
             "safeflg": 0,
             "u": "",
+            "quick_user": 0,
             "username": username,
             "password": password,
             "verifycode": verifycode,
@@ -354,11 +356,12 @@ class Client(object):
             }
         #headers = {"Referer": CROSSDOMAIN_REFERER_URL}
         self.__request(CROSSDOMAIN_URL, "HEAD", params)
-        for cookie in self.__cj:
-            if (cookie.name == 'BDUSS') and (cookie.domain == '.baidu.com'):
-                logging.info("Cross domain login successed")
-                self.__bduss = cookie.value
-                logging.debug("The cookie 'BDUSS': " + cookie.value)
+
+    def __login_get_bduss(self):
+        """ Get the bduss value """
+        url = MUSICMINI_URL + "/app/passport/getBDUSS.php"
+        response = self.__request(url, "GET")
+        self.__bduss = response[1:-1]
 
     def login(self, username, password, verifycode=None, remember=True):
         """ Login baidu music.
@@ -377,6 +380,7 @@ class Client(object):
             self.__login_get_token()
             self.__login(username, password, remember)
             self.__login_cross_domain()
+            self.__login_get_bduss()
             self.islogin = True
         return int(self.islogin)
 
@@ -396,7 +400,7 @@ class Client(object):
             cloud_total: the quota; cloud_used: the used quota; level: the
             user's level, the possible values are 0, 1, 2.
         """
-        url = TTPLAYER_URL + "/app/cloudMusic/spaceSongs.php?"
+        url = MUSICMINI_URL + "/app/cloudMusic/spaceSongs.php?"
         params = {"bduss": self.__bduss}
         response = json.loads(self.__request(url, "GET", params))
         logging.debug("cloud_total: %s; cloud_used: %s; cloud_surplus: %s",
