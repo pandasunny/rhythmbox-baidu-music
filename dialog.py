@@ -20,7 +20,14 @@
 """
 
 import os
+import gettext
 from gi.repository import Gtk
+from gi.repository import RB
+
+_ = gettext.gettext
+APPNAME = "rhythmbox-baidu-music"
+gettext.install(APPNAME, RB.locale_dir())
+gettext.textdomain(APPNAME)
 
 
 class LoginDialog(Gtk.Dialog):

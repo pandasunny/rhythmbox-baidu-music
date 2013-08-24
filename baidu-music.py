@@ -44,8 +44,10 @@ from dialog import AddToPlaylistDialog
 
 import gettext
 
+_ = gettext.gettext
 APPNAME = "rhythmbox-baidu-music"
 gettext.install(APPNAME, RB.locale_dir())
+gettext.textdomain(APPNAME)
 
 # icon files
 BAIDU_MUSIC_ICON = "images/baidu-music.png"
@@ -423,7 +425,7 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
 
             self.__search_window = builder.get_object("search_window")
             self.__search_window.set_icon_from_file(
-                    rb.find_plugin_file(self, "music.png")
+                    rb.find_plugin_file(self, BAIDU_MUSIC_ICON)
                     )
             # do not delete window
             self.__search_window.connect("delete_event",
@@ -483,6 +485,7 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
                 _("Logout confirm")
                 )
         dialog.format_secondary_text(_("Are you sure you want to logout?"))
+
         response = dialog.run()
 
         if response == Gtk.ResponseType.OK and self.client.logout():

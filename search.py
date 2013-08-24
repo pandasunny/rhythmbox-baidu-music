@@ -20,8 +20,17 @@
 """
 
 import re
+import gettext
+
+from gi.repository import Gtk
+from gi.repository import RB
 
 from dialog import AddToPlaylistDialog
+
+_ = gettext.gettext
+APPNAME = "rhythmbox-baidu-music"
+gettext.install(APPNAME, RB.locale_dir())
+gettext.textdomain(APPNAME)
 
 
 class SearchHandle(object):
