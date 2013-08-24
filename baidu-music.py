@@ -509,7 +509,7 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
         shell = self.object
         entry_view = shell.props.selected_page.get_entry_view()
         entries = entry_view.get_selected_entries()
-        song_ids = [int(entry.get_string(RB.RhythmDBPropType.LOCATION)) \
+        song_ids = [int(entry.get_string(RB.RhythmDBPropType.LOCATION)[6:]) \
                 for entry in entries]
         songs = self.client.add_favorite_songs(song_ids)
         if self.collect_source.activated and songs:
@@ -583,7 +583,7 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
         entries = source.get_entry_view().get_selected_entries()
         if not entries:
             return False
-        song_ids = [int(entry.get_string(RB.RhythmDBPropType.LOCATION)) \
+        song_ids = [int(entry.get_string(RB.RhythmDBPropType.LOCATION)[6:]) \
                 for entry in entries]
 
         dialog = AddToPlaylistDialog(self.playlists, song_ids, str(skip_id))
@@ -617,7 +617,7 @@ class BaiduMusicEntryType(RB.RhythmDBEntryType):
 
     def do_get_playback_uri(self, entry):
         db = self.props.db
-        song_id = entry.get_string(RB.RhythmDBPropType.LOCATION)
+        song_id = entry.get_string(RB.RhythmDBPropType.LOCATION)[6:]
         artist = entry.get_string(RB.RhythmDBPropType.ARTIST)
         title = entry.get_string(RB.RhythmDBPropType.TITLE)
         songinfo = self.client.get_song_links(

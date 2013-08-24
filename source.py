@@ -144,7 +144,7 @@ class BaseSource(RB.StaticPlaylistSource):
             try:
                 # create and add a entry
                 entry = RB.RhythmDBEntry.new(
-                        db, self.props.entry_type, song["songId"]
+                        db, self.props.entry_type, "baidu/" + song["songId"]
                         )
                 db.entry_set(
                         entry, RB.RhythmDBPropType.TITLE,
@@ -219,7 +219,7 @@ class BaseSource(RB.StaticPlaylistSource):
         for row in qm:
             entry = row[0]
             print entry.get_ulong(RB.RhythmDBPropType.ENTRY_ID)
-            print entry.get_string(RB.RhythmDBPropType.LOCATION)
+            print entry.get_string(RB.RhythmDBPropType.LOCATION)[6:]
             print entry.get_string(RB.RhythmDBPropType.TITLE)
 
 class BasePlaylist(BaseSource):
@@ -401,7 +401,7 @@ class TempSource(BaseSource):
         entries = self.get_entry_view().get_selected_entries()
         for entry in entries:
             self.remove_entry(entry)
-            song_id = int(entry.get_string(RB.RhythmDBPropType.LOCATION))
+            song_id = int(entry.get_string(RB.RhythmDBPropType.LOCATION)[6:])
             self.songs.remove(song_id)
         self.__save()
 
