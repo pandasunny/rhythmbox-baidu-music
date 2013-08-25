@@ -397,6 +397,16 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
         action.connect("toggled", self.__action_toggle_hq)
         self.action_group.add_action(action)
 
+        # the action about download songs
+        action = Gtk.Action(
+                name="BaiduMusicDownloadAction",
+                label=_("Download"),
+                tooltip=_("Download songs to the local disk."),
+                stock_id=None
+                )
+        action.connect("activate", self.__action_download)
+        self.action_group.add_action(action)
+
         manager.insert_action_group(self.action_group, 0)
         manager.ensure_update()
 
@@ -607,6 +617,16 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
 
     def __action_toggle_hq(self, widget):
         self.settings["hq"] = widget.get_active()
+
+    def __action_download(self, widget):
+        shell = self.object
+        entry_view = shell.props.selected_page.get_entry_view()
+        entries = entry_view.get_selected_entries()
+        song_ids = [int(entry.get_string(RB.RhythmDBPropType.LOCATION)[6:]) \
+                for entry in entries]
+        songs = self.client.get_song_links(song_ids, True, True)
+        for song in songs:
+            print song
 
 
 class BaiduMusicEntryType(RB.RhythmDBEntryType):

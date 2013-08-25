@@ -8,12 +8,14 @@
         <toolitem name="Browse" action="ViewBrowser"/>
         <toolitem name="BaiduMusicRefresh" action="BaiduMusicRefreshAction"/>
         <toolitem name="BaiduMusicAdd" action="BaiduMusicAddAction"/>
+        <toolitem name="BaiduMusicDownload" action="BaiduMusicDownloadAction"/>
         <!-- <toolitem name="BaiduMusicTest" action="BaiduMusicTestAction"/> -->
     </toolbar>
     <toolbar name="TempSourceToolbar">
         <toolitem name="Browse" action="ViewBrowser"/>
         <toolitem name="BaiduMusicAdd" action="BaiduMusicAddAction"/>
         <toolitem name="BaiduMusicCollect" action="BaiduMusicCollectAction"/>
+        <toolitem name="BaiduMusicDownload" action="BaiduMusicDownloadAction"/>
         <!-- <toolitem name="BaiduMusicTest" action="BaiduMusicTestAction"/> -->
     </toolbar>
     <toolbar name="OnlinePlaylistSourceToolbar">
@@ -21,6 +23,7 @@
         <toolitem name="BaiduMusicRefresh" action="BaiduMusicRefreshAction"/>
         <toolitem name="BaiduMusicAdd" action="BaiduMusicAddAction"/>
         <toolitem name="BaiduMusicCollect" action="BaiduMusicCollectAction"/>
+        <toolitem name="BaiduMusicDownload" action="BaiduMusicDownloadAction"/>
         <!-- <toolitem name="BaiduMusicTest" action="BaiduMusicTestAction"/> -->
     </toolbar>
     <popup name="TempSourcePopup">
