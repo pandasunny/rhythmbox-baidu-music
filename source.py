@@ -53,6 +53,8 @@ class BaseSource(RB.StaticPlaylistSource):
         self.status = ""            # the message of source's status
         self.progress = 0           # the progress of update
 
+        self.entry_widgets = []     # a list includes the toolitems
+
         # set up the coverart
         self.__art_store = RB.ExtDB(name="album-art")
         self.__req_id = self.__art_store.connect(
@@ -189,9 +191,27 @@ class BaseSource(RB.StaticPlaylistSource):
 
     def set_entry_view(self):
         """ Setup the entry view of this source. """
+
+        def do_selection_changed(entry_view, widgets):
+            """ Setup the toolitems' status.
+
+            Args:
+                entry_view: the instance of RB.EntryView.
+                widgets: the list includes all widgets' name.
+            """
+            status = entry_view.have_selection() and self.client.islogin
+            manager = self.props.shell.props.ui_manager
+            toolbar_path = self.props.toolbar_path
+            for widget_path in widgets:
+                widget = manager.get_widget(toolbar_path + "/" + widget_path)
+                widget.set_sensitive(status)
+
         ev = self.get_entry_view()
         ev.get_column(RB.EntryViewColumn.TRACK_NUMBER).set_visible(False)
         ev.get_column(RB.EntryViewColumn.GENRE).set_visible(False)
+        do_selection_changed(ev, self.entry_widgets)
+        ev.connect("selection-changed",do_selection_changed,
+                self.entry_widgets)
 
     def get_songs(self, song_ids):
         """ Get all informations of songs.
@@ -333,7 +353,9 @@ class CollectSource(BasePlaylist):
 
     def __init__(self):
         super(CollectSource, self).__init__()
+
         self.popup_widget = "/CollectSourcePopup"
+        self.entry_widgets = ["BaiduMusicAdd"]
 
     def delete_songs(self, song_ids):
         return self.client.delete_collect_songs(song_ids)
@@ -358,8 +380,10 @@ class OnlinePlaylistSource(BasePlaylist):
 
     def __init__(self):
         super(OnlinePlaylistSource, self).__init__()
+
         self.playlist_id = None
         self.popup_widget = "/OnlinePlaylistPopup"
+        self.entry_widgets = ["BaiduMusicAdd", "BaiduMusicCollect"]
 
     def delete_songs(self, song_ids):
         return self.client.delete_playlist_songs(self.playlist_id, song_ids)
@@ -374,7 +398,9 @@ class TempSource(BaseSource):
 
     def __init__(self):
         super(TempSource, self).__init__()
+
         self.popup_widget = "/TempSourcePopup"
+        self.entry_widgets = ["BaiduMusicAdd", "BaiduMusicCollect"]
 
     def do_selected(self):
         if not self.activated:

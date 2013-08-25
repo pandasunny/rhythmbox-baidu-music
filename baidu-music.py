@@ -59,6 +59,7 @@ POPUP_UI = "popup-ui.xml"
 SEARCH_UI = "search.ui"
 PREFS_UI = "baidu-music-prefs.ui"
 
+
 class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
     __gtype_name__ = "BaiduMusicPlugin"
     object = GObject.property(type=GObject.GObject)
@@ -405,10 +406,10 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
         manager = shell.props.ui_manager
 
         widgets = [
-                manager.get_widget("/TempSourceToolbar/BaiduMusicCollect"),
-                manager.get_widget("/TempSourceToolbar/BaiduMusicAdd"),
+                #manager.get_widget("/TempSourceToolbar/BaiduMusicCollect"),
+                #manager.get_widget("/TempSourceToolbar/BaiduMusicAdd"),
                 manager.get_widget("/CollectSourceToolbar/BaiduMusicRefresh"),
-                manager.get_widget("/CollectSourceToolbar/BaiduMusicAdd"),
+                #manager.get_widget("/CollectSourceToolbar/BaiduMusicAdd"),
                 manager.get_widget("/CollectSourcePopup/BaiduMusicRefresh"),
                 manager.get_widget("/CollectSourcePopup/BaiduMusicPlaylistAdd"),
                 manager.get_widget("/TempSourcePopup/BaiduMusicPlaylistAdd"),
