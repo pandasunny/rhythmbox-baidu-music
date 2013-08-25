@@ -511,8 +511,11 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
         entries = entry_view.get_selected_entries()
         song_ids = [int(entry.get_string(RB.RhythmDBPropType.LOCATION)[6:]) \
                 for entry in entries]
-        songs = self.client.add_favorite_songs(song_ids)
-        if self.collect_source.activated and songs:
+        song_ids = self.client.add_collect_songs(song_ids)
+        if self.collect_source.activated and song_ids:
+            song_ids = [song_ids] if isinstance(song_ids, int) else song_ids
+            songs = self.client.get_song_info(song_ids)
+            songs.reverse()
             self.collect_source.add(songs)
 
     def __action_add_playlist(self, widget):

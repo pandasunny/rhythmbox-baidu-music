@@ -169,7 +169,7 @@ class BaseSource(RB.StaticPlaylistSource):
                     albumart = song["songPicSmall"]
                 self.albumart[song["artistName"]+song["albumName"]] = albumart
             except TypeError, e:
-                self.add_location(song["songId"], self.index)
+                self.add_location("baidu/" + song["songId"], self.index)
             except KeyError, e:
                 pass
 
