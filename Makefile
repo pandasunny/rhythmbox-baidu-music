@@ -33,5 +33,8 @@ install-po:
 	done
 	rm -f ./po/*.mo
 schemas:
+	if [ ! -d $(SCHEMAS_DIR) ]; then \
+		mkdir -p $(SCHEMAS_DIR); \
+	fi
 	cp org.gnome.rhythmbox.plugins.baidu-music.gschema.xml $(SCHEMAS_DIR)
 	glib-compile-schemas $(SCHEMAS_DIR)
