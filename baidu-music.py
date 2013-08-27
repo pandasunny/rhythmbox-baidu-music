@@ -32,15 +32,19 @@ from gi.repository import Gtk
 from gi.repository import GdkPixbuf
 
 from client import Client
+
 from source import BaseSource
 from source import CollectSource
 from source import OnlinePlaylistSource
 from source import TempSource
+
 from search import SearchHandle
 from dialog import LoginDialog
 from dialog import AddPlaylistDialog
 from dialog import RenamePlaylistDialog
 from dialog import AddToPlaylistDialog
+
+from download import DownloadDialog
 
 import gettext
 
@@ -625,8 +629,15 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
         song_ids = [int(entry.get_string(RB.RhythmDBPropType.LOCATION)[6:]) \
                 for entry in entries]
         songs = self.client.get_song_links(song_ids, True, True)
-        for song in songs:
-            print song
+
+        dialog = DownloadDialog(song_ids, self.client)
+        response = dialog.run()
+        if response == Gtk.ResponseType.OK:
+            songs_list = dialog.get_songs_list()
+            print songs_list
+        elif response == Gtk.ResponseType.CANCEL:
+            pass
+        dialog.destroy()
 
 
 class BaiduMusicEntryType(RB.RhythmDBEntryType):
