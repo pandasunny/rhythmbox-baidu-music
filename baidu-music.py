@@ -45,6 +45,7 @@ from dialog import RenamePlaylistDialog
 from dialog import AddToPlaylistDialog
 
 from download import DownloadDialog
+from download import DownloadSource
 
 import gettext
 
@@ -212,6 +213,19 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
                 #)
         playlist_page_group.set_property("pixbuf", icon)
         shell.append_display_page(playlist_page_group, page_group)
+
+        # create a download source
+        icon = Gtk.IconTheme.get_default().load_icon(
+                "emblem-downloads", width,
+                Gtk.IconLookupFlags.GENERIC_FALLBACK)
+        self.download_source = GObject.new(
+            DownloadSource, shell=shell,
+            name=_("My Download"),
+            plugin=self,
+            pixbuf=icon,
+        )
+        self.download_source.setup()
+        shell.append_display_page(self.download_source, page_group)
 
         self.page_group = page_group
         self.playlist_page_group = playlist_page_group
@@ -634,7 +648,7 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
         response = dialog.run()
         if response == Gtk.ResponseType.OK:
             songs_list = dialog.get_songs_list()
-            print songs_list
+            self.download_source.add_items(songs_list)
         elif response == Gtk.ResponseType.CANCEL:
             pass
         dialog.destroy()
