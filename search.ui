@@ -13,7 +13,9 @@
       <column type="gchararray"/>
       <!-- column-name album -->
       <column type="gchararray"/>
-      <!-- column-name copyright -->
+      <!-- column-name resource_type -->
+      <column type="GdkPixbuf"/>
+      <!-- column-name has_mv -->
       <column type="gboolean"/>
     </columns>
   </object>
@@ -28,7 +30,7 @@
     <property name="can_focus">False</property>
     <property name="title" translatable="yes">Search Music</property>
     <property name="window_position">center</property>
-    <property name="default_width">650</property>
+    <property name="default_width">700</property>
     <property name="default_height">600</property>
     <property name="destroy_with_parent">True</property>
     <property name="has_resize_grip">False</property>
@@ -84,6 +86,7 @@
           <object class="GtkScrolledWindow" id="scrolledwindow">
             <property name="visible">True</property>
             <property name="can_focus">False</property>
+            <property name="hscrollbar_policy">never</property>
             <property name="shadow_type">in</property>
             <child>
               <object class="GtkTreeView" id="song_treeview">
@@ -100,12 +103,10 @@
                     <property name="sizing">fixed</property>
                     <property name="fixed_width">30</property>
                     <child>
-                      <object class="GtkCellRendererToggle" id="select_cellrenderer">
+                      <object class="GtkCellRendererToggle" id="select_cr">
                         <signal name="toggled" handler="on_toggled" swapped="no"/>
                       </object>
                       <attributes>
-                        <attribute name="visible">5</attribute>
-                        <attribute name="activatable">5</attribute>
                         <attribute name="active">0</attribute>
                       </attributes>
                     </child>
@@ -118,7 +119,13 @@
                     <property name="title" translatable="yes">Title</property>
                     <property name="expand">True</property>
                     <child>
-                      <object class="GtkCellRendererText" id="title_cellrenderer">
+                      <object class="GtkCellRendererPixbuf" id="resource_cr"/>
+                      <attributes>
+                        <attribute name="pixbuf">5</attribute>
+                      </attributes>
+                    </child>
+                    <child>
+                      <object class="GtkCellRendererText" id="title_cr">
                         <property name="ellipsize">end</property>
                       </object>
                       <attributes>
@@ -134,7 +141,7 @@
                     <property name="title" translatable="yes">Artist</property>
                     <property name="expand">True</property>
                     <child>
-                      <object class="GtkCellRendererText" id="artist_cellrenderer">
+                      <object class="GtkCellRendererText" id="artist_cr">
                         <property name="ellipsize">end</property>
                       </object>
                       <attributes>
@@ -150,7 +157,7 @@
                     <property name="title" translatable="yes">Album</property>
                     <property name="expand">True</property>
                     <child>
-                      <object class="GtkCellRendererText" id="album_cellrenderer">
+                      <object class="GtkCellRendererText" id="album_cr">
                         <property name="ellipsize">end</property>
                       </object>
                       <attributes>

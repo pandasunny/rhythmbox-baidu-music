@@ -433,6 +433,7 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
                     lambda w, e: w.hide() or True)
             builder.connect_signals(
                     SearchHandle(
+                        plugin=self,
                         builder=builder,
                         collect_source=self.collect_source,
                         temp_source=self.temp_source,
