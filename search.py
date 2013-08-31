@@ -123,9 +123,16 @@ class SearchHandle(object):
     def on_search(self, widget):
         """ Search the keywords of entry. """
         self.__keyword = self.__search_entry.get_text().strip()
-        if self.__keyword:
+        if self.__keyword!="":
             self.__current_page = 1
             self.__refresh()
+        else:
+            self.__liststore.clear()
+            self.__song_ids = []
+            self.__keyword = ""
+            self.__current_page = 0
+            self.__last_page = 0
+            self.__select_all = False
         self.__check_buttons_status()
 
     def on_toggled(self, widget, path):
