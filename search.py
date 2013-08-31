@@ -32,6 +32,7 @@ APPNAME = "rhythmbox-baidu-music"
 gettext.install(APPNAME, RB.locale_dir())
 gettext.textdomain(APPNAME)
 
+PREPAGE = 30
 
 class SearchHandle(object):
 
@@ -96,7 +97,7 @@ class SearchHandle(object):
         """ Refresh the liststore of view. """
         pattern = re.compile("</?em>")
 
-        info = self.__client.search(self.__keyword, self.__current_page)
+        info = self.__client.search(self.__keyword, self.__current_page, PREPAGE)
         self.__liststore.clear()
         for song in info["song_list"]:
             self.__liststore.append([
@@ -109,8 +110,9 @@ class SearchHandle(object):
                 ])
         total = 1000 if int(info["pages"]["total"]) >= 1000 \
                 else int(info["pages"]["total"])
-        num = int(info["pages"]["rn_num"])
-        self.__last_page = (total + num - 1) / num
+        #num = int(info["pages"]["rn_num"])
+        #self.__last_page = (total + num - 1) / num
+        self.__last_page = (total + PREPAGE - 1) / PREPAGE
         self.__total_lable.set_label(str(self.__last_page) + " /")
         self.__page_adjustment.set_value(self.__current_page)
         self.__page_adjustment.set_upper(self.__last_page)
