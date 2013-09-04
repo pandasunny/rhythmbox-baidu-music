@@ -9,6 +9,7 @@ import time
 
 import rb
 from gi.repository import Gtk
+from gi.repository import GdkPixbuf
 from gi.repository import RB
 
 import gettext
@@ -25,38 +26,42 @@ CHUNK_SIZE = 16384  # 16KByte/time
 RANGE_SIZE = [611840, 204800, 163840, 81920, 81920]
 
 # Download Status
-DOWNLOAD_QUEUE = "0"
-DOWNLOAD_RUN = "1"
-DOWNLOAD_STOP = "2"
-DOWNLOAD_FINISH = "3"
-DOWNLOAD_ERROR = "4"
-DOWNLOAD_DELETE = "5"
+DOWNLOAD_QUEUE = _("queue")
+DOWNLOAD_RUN = _("run")
+DOWNLOAD_STOP = _("stop")
+DOWNLOAD_FINISH = _("finish")
+DOWNLOAD_ERROR = _("error")
+DOWNLOAD_DELETE = _("delete")
+
+# status icon text
+#DOWNLOAD_QUEUE = "download-queue"
+#DOWNLOAD_RUN = "download-run"
+#DOWNLOAD_STOP = "download-stop"
+#DOWNLOAD_FINISH = "download-finish"
+#DOWNLOAD_ERROR = "download-error"
+#DOWNLOAD_DELETE = "download-delete"
 
 # Song information
-(
-    SONG_ID,
-    SONG_TITLE,
-    SONG_ARTIST,
-    SONG_ALBUM,
-    SONG_URL,
-    SONG_PROGRESS,
-    SONG_TYPE,
-    SONG_FILE,
-    SONG_SIZE,
-    SONG_HASH,
-    SONG_PATH,
-    SONG_FORMAT,
-    SONG_STATUS
-) = range(13)
+(SONG_ID,
+ SONG_TITLE,
+ SONG_ARTIST,
+ SONG_ALBUM,
+ SONG_URL,
+ SONG_PROGRESS,
+ SONG_TYPE,
+ SONG_FILE,
+ SONG_SIZE,
+ SONG_HASH,
+ SONG_PATH,
+ SONG_FORMAT,
+ SONG_STATUS) = range(13)
 
 # song type
-(
-    SONG_TYPE_FLAC,
-    SONG_TYPE_320,
-    SONG_TYPE_256,
-    SONG_TYPE_128,
-    SONG_TYPE_64
-) = range(5)
+(SONG_TYPE_FLAC,
+ SONG_TYPE_320,
+ SONG_TYPE_256,
+ SONG_TYPE_128,
+ SONG_TYPE_64) = range(5)
 
 
 class DownloadDialog(Gtk.Dialog):
@@ -199,12 +204,12 @@ class DownloadDialog(Gtk.Dialog):
 
 class DownloadThread(threading.Thread):
 
-    def __init__(self, liststore):
+    def __init__(self, liststore, lock):
         threading.Thread.__init__(self)
 
         self.liststore = liststore
         self.daemon = True
-        self.lock = threading.RLock()
+        self.lock = lock
 
     def set_task(self):
         task = None
@@ -248,13 +253,17 @@ class DownloadThread(threading.Thread):
                     self.song[SONG_STATUS] = DOWNLOAD_QUEUE
                     self.lock.release()
             except Exception, e:
+                print e
                 self.lock.acquire()
                 self.song[SONG_STATUS] = DOWNLOAD_ERROR
                 self.lock.release()
             finally:
                 self.handler.close()
             if self.song[SONG_STATUS]==DOWNLOAD_DELETE:
-                os.remove(self.filename)
+                try:
+                    os.remove(self.filename)
+                except:
+                    pass
 
     def download(self):
         if self.downloaded+self.range_size>self.song[SONG_SIZE]:
@@ -284,6 +293,7 @@ class DownloadThread(threading.Thread):
             self.lock.acquire()
             self.song[SONG_STATUS] = DOWNLOAD_FINISH
             self.lock.release()
+        #time.wait(0.5)
 
     def rename(self):
         number = 0
@@ -307,10 +317,12 @@ class DownloadSource(RB.Source):
 
         self.pool = []
         self.lock = threading.RLock()
+        self.status_icon = {}
         #self.running = 0
 
     def create_ui(self):
         shell = self.props.shell
+        #self.register_stock_icons()
 
         builder = Gtk.Builder()
         builder.set_translation_domain(APPNAME)
@@ -339,6 +351,24 @@ class DownloadSource(RB.Source):
         self.vbox.add2(scrolledwindow)
         self.pack_start(self.vbox, True, True, 0)
         self.show_all()
+
+    def register_stock_icons(self):
+        icons = [
+                DOWNLOAD_QUEUE,
+                DOWNLOAD_RUN,
+                DOWNLOAD_STOP,
+                DOWNLOAD_FINISH,
+                DOWNLOAD_ERROR,
+                DOWNLOAD_DELETE
+                ]
+        factory = Gtk.IconFactory()
+        for icon in icons:
+            pixbuf = GdkPixbuf.Pixbuf.new_from_file(
+                rb.find_plugin_file(self.props.plugin, "images/%s.png" % icon)
+                )
+            icon_set = Gtk.IconSet.new_from_pixbuf(pixbuf)
+            factory.add(icon, icon_set)
+        factory.add_default()
 
     def run_cb(self, widget):
         selection = self.treeview.get_selection()
@@ -376,14 +406,21 @@ class DownloadSource(RB.Source):
             else:
                 if status==DOWNLOAD_FINISH:
                     filename = "%s - %s.%s" % (
-                            song[SONG_ARTIST], song[SONG_TITLE], song[SONG_TYPE]
+                            song[SONG_ARTIST],
+                            song[SONG_TITLE],
+                            song[SONG_FORMAT]
                             )
                 else:
                     filename = "%s - %s.bd%i" % (
-                            song[SONG_ARTIST], song[SONG_TITLE], song[SONG_FILE]
+                            song[SONG_ARTIST],
+                            song[SONG_TITLE],
+                            song[SONG_FILE]
                             )
                 file = os.path.join(song[SONG_PATH], filename)
-                os.remove(file)
+                try:
+                    os.remove(file)
+                except:
+                    pass
                 print "Delete the file: %s" % file
             model.remove(treeiter)
             self.items.remove(key)
@@ -427,6 +464,6 @@ class DownloadSource(RB.Source):
         limit = THREAD_LIMIT - len(self.pool)
         count = count if count<limit else limit
         for i in range(count):
-            thread = DownloadThread(self.liststore)
+            thread = DownloadThread(self.liststore, self.lock)
             thread.start()
             self.pool.append(thread)
