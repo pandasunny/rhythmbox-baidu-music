@@ -30,7 +30,6 @@
       <!-- column-name status -->
       <column type="gchararray"/>
     </columns>
-    <signal name="row-changed" handler="on_liststore_row_changed" swapped="no"/>
   </object>
   <object class="GtkScrolledWindow" id="scrolledwindow">
     <property name="visible">True</property>

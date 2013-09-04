@@ -5,6 +5,7 @@ import os
 import threading
 import urllib2
 import socket
+import time
 
 import rb
 from gi.repository import Gtk
@@ -25,33 +26,37 @@ RANGE_SIZE = [611840, 204800, 163840, 81920, 81920]
 
 # Download Status
 DOWNLOAD_QUEUE = "0"
-DOWNLOAD_RUN = "2"
-DOWNLOAD_STOP = "1"
+DOWNLOAD_RUN = "1"
+DOWNLOAD_STOP = "2"
 DOWNLOAD_FINISH = "3"
 DOWNLOAD_ERROR = "4"
 DOWNLOAD_DELETE = "5"
 
 # Song information
-SONG_ID = 0
-SONG_TITLE = 1
-SONG_ARTIST = 2
-SONG_ALBUM = 3
-SONG_URL = 4
-SONG_PROGRESS = 5
-SONG_TYPE = 6
-SONG_FILE = 7
-SONG_SIZE = 8
-SONG_HASH = 9
-SONG_PATH = 10
-SONG_FORMAT = 11
-SONG_STATUS = 12
+(
+    SONG_ID,
+    SONG_TITLE,
+    SONG_ARTIST,
+    SONG_ALBUM,
+    SONG_URL,
+    SONG_PROGRESS,
+    SONG_TYPE,
+    SONG_FILE,
+    SONG_SIZE,
+    SONG_HASH,
+    SONG_PATH,
+    SONG_FORMAT,
+    SONG_STATUS
+) = range(13)
 
 # song type
-SONG_TYPE_FLAC = 0
-SONG_TYPE_320 = 1
-SONG_TYPE_256 = 2
-SONG_TYPE_128 = 3
-SONG_TYPE_64 = 4
+(
+    SONG_TYPE_FLAC,
+    SONG_TYPE_320,
+    SONG_TYPE_256,
+    SONG_TYPE_128,
+    SONG_TYPE_64
+) = range(5)
 
 
 class DownloadDialog(Gtk.Dialog):
@@ -194,42 +199,62 @@ class DownloadDialog(Gtk.Dialog):
 
 class DownloadThread(threading.Thread):
 
-    def __init__(self, name, song):
-        threading.Thread.__init__(self, name=name)
+    def __init__(self, liststore):
+        threading.Thread.__init__(self)
 
+        self.liststore = liststore
         self.daemon = True
-        self.song = song
-        self.range_size = RANGE_SIZE[self.song[SONG_TYPE]]
-        self.status = True if self.song[SONG_STATUS]==DOWNLOAD_RUN else False
+        self.lock = threading.RLock()
 
-        self.filename = os.path.join(self.song[SONG_PATH], "%s - %s.bd%i" % (
-            self.song[SONG_ARTIST], self.song[SONG_TITLE], self.song[SONG_FILE]
-            ))
-        self.handler = open(self.filename, "ab+")
+    def set_task(self):
+        task = None
+        self.lock.acquire()
+        for song in self.liststore:
+            if song[SONG_STATUS]==DOWNLOAD_QUEUE:
+                song[SONG_STATUS] = DOWNLOAD_RUN
+                task = song
+                break
+        self.lock.release()
+
+        if task:
+            self.song = task
+            self.range_size = RANGE_SIZE[self.song[SONG_TYPE]]
+
+            self.filename = os.path.join(
+                    self.song[SONG_PATH], "%s - %s.bd%i" % (
+                        self.song[SONG_ARTIST],
+                        self.song[SONG_TITLE],
+                        self.song[SONG_FILE]
+                        ))
+            self.handler = open(self.filename, "ab+")
+            return True
+        else:
+            return False
 
     def run(self):
-        try:
-            self.downloaded = os.path.getsize(self.filename)
-        except OSError:
-            self.downloaded = 0
+        while self.set_task():
+            try:
+                self.downloaded = os.path.getsize(self.filename)
+            except OSError:
+                self.downloaded = 0
 
-        try:
-            while self.song[SONG_PROGRESS]<100 and self.status:
-                self.download()
-        except urllib2.URLError, e:
-            if isinstance(e.reason, socket.timeout):
-                self.song[SONG_STATUS] = DOWNLOAD_QUEUE
-        except urllib2.HTTPError, e:
-            self.song[SONG_STATUS] = DOWNLOAD_ERROR
-        except Exception, e:
-            self.song[SONG_STATUS] = DOWNLOAD_ERROR
-        finally:
-            self.handler.close()
-        if self.song[SONG_STATUS]==DOWNLOAD_DELETE:
-            os.remove(self.filename)
-        if self.song[SONG_STATUS]==DOWNLOAD_RUN and not self.status:
-            self.song[SONG_STATUS] = DOWNLOAD_STOP
-        #print "thread %s is stoped." % self.getName()
+            try:
+                while self.song[SONG_PROGRESS]<100 \
+                        and self.song[SONG_STATUS]==DOWNLOAD_RUN:
+                    self.download()
+            except urllib2.URLError, e:
+                if isinstance(e.reason, socket.timeout):
+                    self.lock.acquire()
+                    self.song[SONG_STATUS] = DOWNLOAD_QUEUE
+                    self.lock.release()
+            except Exception, e:
+                self.lock.acquire()
+                self.song[SONG_STATUS] = DOWNLOAD_ERROR
+                self.lock.release()
+            finally:
+                self.handler.close()
+            if self.song[SONG_STATUS]==DOWNLOAD_DELETE:
+                os.remove(self.filename)
 
     def download(self):
         if self.downloaded+self.range_size>self.song[SONG_SIZE]:
@@ -241,22 +266,24 @@ class DownloadThread(threading.Thread):
         request.add_header("User-Agent",
                 "Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 6.1; \
                         Trident/4.0)")
-        request.add_header(
-                "Range", "bytes=%d-%d" % (self.downloaded,range_end))
+        request.add_header("Range", "bytes=%d-%d" % \
+                (self.downloaded, range_end))
 
         response = urllib2.urlopen(request, timeout=TIMEOUT)
         chunk = response.read(CHUNK_SIZE)
         while chunk:
             self.handler.write(chunk)
             self.downloaded += len(chunk)
-            self.song[5] = int(self.downloaded/self.song[SONG_SIZE]*100)
+            self.lock.acquire()
+            self.song[SONG_PROGRESS] = int(
+                    self.downloaded/self.song[SONG_SIZE]*100)
+            self.lock.release()
             chunk = response.read(CHUNK_SIZE)
         if self.song[SONG_PROGRESS]==100:
             self.rename()
+            self.lock.acquire()
             self.song[SONG_STATUS] = DOWNLOAD_FINISH
-
-    def stop(self):
-        self.status = False
+            self.lock.release()
 
     def rename(self):
         number = 0
@@ -276,10 +303,13 @@ class DownloadSource(RB.Source):
     def __init__(self):
         super(DownloadSource, self).__init__()
 
-        self.items = {}
-        self.tasks = {}
+        self.items = []
 
-    def setup(self):
+        self.pool = []
+        self.lock = threading.RLock()
+        #self.running = 0
+
+    def create_ui(self):
         shell = self.props.shell
 
         builder = Gtk.Builder()
@@ -293,7 +323,7 @@ class DownloadSource(RB.Source):
             "on_pause_btn_clicked": self.pause_cb,
             "on_delete_btn_clicked": self.delete_cb,
             "on_tree_selection_changed": self.select_cb,
-            "on_liststore_row_changed": self.row_changed_cb,
+            #"on_liststore_row_changed": self.row_changed_cb,
         }
         builder.connect_signals(handlers)
 
@@ -313,11 +343,14 @@ class DownloadSource(RB.Source):
     def run_cb(self, widget):
         selection = self.treeview.get_selection()
         (model, paths) = selection.get_selected_rows()
+        count = 0
         for path in paths:
             treeiter = model.get_iter(path)
             song = model[treeiter]
             if song[SONG_STATUS] in [DOWNLOAD_ERROR, DOWNLOAD_STOP]:
                 song[SONG_STATUS] = DOWNLOAD_QUEUE
+                count += 1
+        self.join(count)
 
     def pause_cb(self, widget):
         selection = self.treeview.get_selection()
@@ -325,11 +358,10 @@ class DownloadSource(RB.Source):
         for path in paths:
             treeiter = model.get_iter(path)
             status = model.get_value(treeiter, SONG_STATUS)
-            if status==DOWNLOAD_QUEUE:
+            if status in [DOWNLOAD_QUEUE, DOWNLOAD_RUN]:
+                self.lock.acquire()
                 model.set_value(treeiter, SONG_STATUS, DOWNLOAD_STOP)
-            elif status==DOWNLOAD_RUN:
-                key = model.get_value(treeiter, SONG_FILE)
-                self.tasks[key].stop()
+                self.lock.release()
 
     def delete_cb(self, widget):
         selection = self.treeview.get_selection()
@@ -341,59 +373,60 @@ class DownloadSource(RB.Source):
             key = model.get_value(treeiter, SONG_FILE)
             if status==DOWNLOAD_RUN:
                 model.set_value(treeiter, SONG_STATUS, DOWNLOAD_DELETE)
-            elif status==DOWNLOAD_FINISH:
-                filename = os.path.join(song[SONG_PATH], "%s - %s.%s" % (
-                    song[SONG_ARTIST], song[SONG_TITLE], song[SONG_TYPE]
-                    ))
-                os.remove(filename)
-                print "Delete the file: %s" % filename
             else:
-                filename = os.path.join(song[SONG_PATH], "%s - %s.bd%i" % (
-                    song[SONG_ARTIST], song[SONG_TITLE], song[SONG_FILE]
-                    ))
-                os.remove(filename)
-                print "Delete the file: %s" % filename
+                if status==DOWNLOAD_FINISH:
+                    filename = "%s - %s.%s" % (
+                            song[SONG_ARTIST], song[SONG_TITLE], song[SONG_TYPE]
+                            )
+                else:
+                    filename = "%s - %s.bd%i" % (
+                            song[SONG_ARTIST], song[SONG_TITLE], song[SONG_FILE]
+                            )
+                file = os.path.join(song[SONG_PATH], filename)
+                os.remove(file)
+                print "Delete the file: %s" % file
             model.remove(treeiter)
-            del self.items[key]
+            self.items.remove(key)
         selection.unselect_all()
 
     def select_cb(self, selection):
         (model, paths) = selection.get_selected_rows()
         self.toolbar.set_sensitive(bool(len(paths)))
 
-    def row_changed_cb(self, model, path, treeiter):
-        row = model[treeiter]
-        if row[SONG_STATUS] not in [DOWNLOAD_QUEUE, DOWNLOAD_RUN]:
-            if row[SONG_FILE] in self.tasks.keys():
-                del self.tasks[row[SONG_FILE]]
-
-        if len(self.tasks)<THREAD_LIMIT:
-            for song in self.liststore:
-                if song[SONG_STATUS]==DOWNLOAD_QUEUE:
-                    self.add_task(song)
-                    break
-
     def add_items(self, songs):
-        path = RB.music_dir()
+        path = os.path.join(RB.music_dir(), "baidu")
+
+        self.lock.acquire()
         for song in songs:
             key = song["file"]["file_id"]
-            if key not in self.items.keys():
-                item = [
-                        song["id"], song["title"], song["artist"],
-                        song["album"], song["file"]["url"], 0,
-                        song["type"], song["file"]["file_id"],
-                        song["file"]["size"], song["file"]["hash"],
-                        path, song["file"]["format"], DOWNLOAD_QUEUE
-                        ]
-                self.items[key] = self.liststore.append(item)
-                #self.items[key][SONG_STATUS] = DOWNLOAD_QUEUE
-                if len(self.tasks)<THREAD_LIMIT:
-                    self.add_task(self.liststore[self.items[key]])
+            if key not in self.items:
+                self.liststore.append([
+                    song["id"],
+                    song["title"],
+                    song["artist"],
+                    song["album"],
+                    song["file"]["url"],
+                    0,  # progress
+                    song["type"],
+                    song["file"]["file_id"],
+                    song["file"]["size"],
+                    song["file"]["hash"],
+                    path,   # download dir
+                    song["file"]["format"],
+                    DOWNLOAD_QUEUE
+                ])
+                self.items.append(key)
+        self.lock.release()
+        self.join(len(songs))
 
-    def add_task(self, song):
-        key = song[SONG_FILE]
-        song[SONG_STATUS] = DOWNLOAD_RUN
-        task = DownloadThread(key, song)
-        task.setDaemon(True)
-        task.start()
-        self.tasks[key] = task
+    def join(self, count):
+        for thread in self.pool:
+            if not thread.is_alive():
+                self.pool.remove(thread)
+                del thread
+        limit = THREAD_LIMIT - len(self.pool)
+        count = count if count<limit else limit
+        for i in range(count):
+            thread = DownloadThread(self.liststore)
+            thread.start()
+            self.pool.append(thread)

@@ -224,7 +224,7 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
             plugin=self,
             pixbuf=icon,
         )
-        self.download_source.setup()
+        self.download_source.create_ui()
         shell.append_display_page(self.download_source, page_group)
 
         self.page_group = page_group
