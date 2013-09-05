@@ -35,6 +35,12 @@ DELTA = 200
 TEMP_PLAYLIST = "baidu-music/temp.pls"
 
 
+class PlaylistGroup(RB.DisplayPage):
+
+    def do_selectable(self):
+        return False
+
+
 class BaseSource(RB.StaticPlaylistSource):
 
     albumart = {}   # the coverart dict

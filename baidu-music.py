@@ -32,6 +32,7 @@ from gi.repository import Gtk
 from gi.repository import GdkPixbuf
 
 from client import Client
+from source import PlaylistGroup
 from source import BaseSource
 from source import CollectSource
 from source import OnlinePlaylistSource
@@ -123,7 +124,7 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
         # delete page_group
         self.playlist_page_group.delete_thyself()
         self.playlist_page_group = None
-        self.page_group.delete_thyself()
+        #self.page_group.delete_thyself()
         self.page_group = None
 
         # delete some variables
@@ -150,8 +151,7 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
                     name=_("Baidu Music"),
                     category=RB.DisplayPageGroupType.TRANSIENT,
                     )
-        shell.append_display_page(page_group, None)
-                #RB.DisplayPageGroup.get_by_id("stores"))
+            shell.append_display_page(page_group, None)
 
         # create the temp source
         self.temp_source = GObject.new(
@@ -167,9 +167,6 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
         icon = Gtk.IconTheme.get_default().load_icon(
                 "audio-x-generic", width,
                 Gtk.IconLookupFlags.GENERIC_FALLBACK)
-        #icon = GdkPixbuf.Pixbuf.new_from_file_at_size(
-                #rb.find_plugin_file(self, TEMP_ICON), width, height
-                #)
         self.temp_source.set_property("pixbuf", icon)
         shell.append_display_page(self.temp_source, page_group)
 
@@ -192,21 +189,14 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
         shell.register_entry_type_for_source(self.collect_source, self.entry_type)
 
         # Add a page_group which includes all online playlists
-        playlist_page_group = RB.DisplayPageGroup.get_by_id("baidu-music-playlists")
-        if not playlist_page_group:
-            playlist_page_group = RB.DisplayPageGroup(
-                    shell=shell,
-                    id="baidu-music-playlists",
-                    name=_("Online Playlists"),
-                    category=RB.DisplayPageGroupType.TRANSIENT,
-                    )
         icon = Gtk.IconTheme.get_default().load_icon(
                 "audio-x-mp3-playlist", width,
                 Gtk.IconLookupFlags.GENERIC_FALLBACK)
-        #icon = GdkPixbuf.Pixbuf.new_from_file_at_size(
-                #rb.find_plugin_file(self, PLAYLIST_ICON), width, height
-                #)
-        playlist_page_group.set_property("pixbuf", icon)
+        playlist_page_group = PlaylistGroup(
+                shell=shell,
+                name=_("Online Playlists"),
+                pixbuf=icon,
+                )
         shell.append_display_page(playlist_page_group, page_group)
 
         self.page_group = page_group
