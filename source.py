@@ -31,6 +31,8 @@ from gi.repository import Gdk
 from gi.repository import Gtk
 from gi.repository import RB
 
+import api as client
+
 DELTA = 200
 TEMP_PLAYLIST = "baidu-music/temp.pls"
 
@@ -44,7 +46,7 @@ class PlaylistGroup(RB.DisplayPage):
 class BaseSource(RB.StaticPlaylistSource):
 
     albumart = {}   # the coverart dict
-    client = None   # the client API
+    #client = None   # the client API
 
     def __init__(self):
         super(BaseSource, self).__init__()
@@ -205,7 +207,7 @@ class BaseSource(RB.StaticPlaylistSource):
                 entry_view: the instance of RB.EntryView.
                 widgets: the list includes all widgets' name.
             """
-            status = entry_view.have_selection() and self.client.islogin
+            status = entry_view.have_selection() and client.user.is_login
             manager = self.props.shell.props.ui_manager
             toolbar_path = self.props.toolbar_path
             for widget_path in widgets:
@@ -231,7 +233,9 @@ class BaseSource(RB.StaticPlaylistSource):
         self.status = _("Loading song list...")
         start, total, songs = 0, len(song_ids), []
         while start < total:
-            songs.extend(self.client.get_song_info(song_ids[start:start+DELTA]))
+            songs.extend(client.common.GetSongInfo().run({
+                "songIds": song_ids[start:start+DELTA],
+                }))
             self.progress = start/total
             self.notify_status_changed()
             start += DELTA
@@ -265,7 +269,7 @@ class BasePlaylist(BaseSource):
             self.set_entry_view()
 
             # load the song list
-            if self.client.islogin:
+            if client.user.is_login:
                 self.load()
 
             self.activated = True
@@ -364,20 +368,21 @@ class CollectSource(BasePlaylist):
         self.entry_widgets = ["BaiduMusicAdd"]
 
     def delete_songs(self, song_ids):
-        return self.client.delete_collect_songs(song_ids)
+        return client.collect.DeleteSongs().run({"songId": song_ids, })
 
     def get_song_ids(self):
         self.status = _("Loading song IDs...")
         start, song_ids = 0, []
         while True:
-            song_ids.extend(self.client.get_collect_ids(start))
-            self.progress = start/self.client.total
+            total, ids = client.collect.GetSongIDs().run({"start": start, })
+            song_ids.extend(ids)
+            self.progress = start/total
             self.notify_status_changed()
             start += DELTA
-            if start >= self.client.total:
+            if start >= total:
                 song_ids.reverse()
                 break
-        self.progress = start/self.client.total
+        self.progress = start/total
         self.notify_status_changed()
         return song_ids
 
@@ -392,10 +397,15 @@ class OnlinePlaylistSource(BasePlaylist):
         self.entry_widgets = ["BaiduMusicAdd", "BaiduMusicCollect"]
 
     def delete_songs(self, song_ids):
-        return self.client.delete_playlist_songs(self.playlist_id, song_ids)
+        return client.playlist.DeleteSongs().run({
+            "listId": self.playlist_id,
+            "songId": song_ids,
+            })
 
     def get_song_ids(self):
-        song_ids = self.client.get_playlist(self.playlist_id)
+        song_ids = client.playlist.GetSongIDs().run({
+            "playListId": self.playlist_id,
+            })
         song_ids.reverse()
         return song_ids
 

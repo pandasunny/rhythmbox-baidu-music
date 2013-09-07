@@ -31,7 +31,9 @@ from gi.repository import PeasGtk
 from gi.repository import Gtk
 from gi.repository import GdkPixbuf
 
-from client import Client
+#from client import Client
+import api as client
+
 from source import PlaylistGroup
 from source import BaseSource
 from source import CollectSource
@@ -60,6 +62,9 @@ POPUP_UI = "popup-ui.xml"
 SEARCH_UI = "search.ui"
 PREFS_UI = "baidu-music-prefs.ui"
 
+def list2str(alist):
+    return ",".join(map(str, alist))
+
 
 class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
     __gtype_name__ = "BaiduMusicPlugin"
@@ -85,7 +90,7 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
         self.__set_client()
         self.__set_ui_manager()
 
-        if self.client.islogin:
+        if client.user.is_login:
             self.__set_playlists()
 
         self.__search_window = None
@@ -132,7 +137,7 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
         self.entry_type = None
 
         self.settings = None
-        self.client = None
+        #self.client = None
 
     def __set_sources(self):
         """ setup the sources includes collect, temp """
@@ -204,11 +209,14 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
 
     def __get_playlists(self):
         """ Get all online playlists. """
-        havemore, result = 1, []
-        if self.client.islogin:
+        havemore, result, page_no = 1, [], 0
+        if client.user.is_login:
             while havemore:
-                havemore, total, playlists = self.client.get_playlists()
+                havemore, total, playlists = client.playlist.GetAll().run({
+                        "page_no": page_no,
+                        })
                 result.extend(playlists)
+                page_no += 1
         return result
 
     def __set_playlists(self):
@@ -247,18 +255,15 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
             os.mkdir(cache_dir)
         cookie =  RB.find_user_cache_file("baidu-music/cookie")
 
-        self.client = Client(cookie, debug=False)
+        client.init(cookie, False)
         username = self.settings.get_string("username")
         password = self.settings.get_string("password")
-        if username and password and not self.client.islogin:
+        if username and password and not client.user.is_login:
             try:
-                self.client.login(username, password)
+                client.user.login(username, password)
             except Exception, e:
                 self.settings["username"] = ""
                 self.settings["password"] = ""
-
-        BaseSource.client = self.client
-        self.entry_type.client = self.client
 
     def __set_ui_manager(self):
         """ Setup the ui manager. """
@@ -285,7 +290,7 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
         self.action_group.add_action(action)
 
         # the user login or logout action
-        if self.client.islogin:
+        if client.user.is_login:
             action = Gtk.Action(
                     name="BaiduMusicLoginAction",
                     label=_("Logout"),
@@ -405,7 +410,7 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
                 manager.get_widget("/TempSourcePopup/BaiduMusicPlaylistAdd"),
                 ]
         for widget in widgets:
-            widget.set_sensitive(self.client.islogin)
+            widget.set_sensitive(client.user.is_login)
 
     def __action_search(self, widget):
         """ Show the search box window """
@@ -427,7 +432,6 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
                         builder=builder,
                         collect_source=self.collect_source,
                         temp_source=self.temp_source,
-                        client=self.client,
                         playlists=self.playlists,
                         )
                     )
@@ -435,7 +439,7 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
 
     def __action_user(self, widget):
         """ Login or logout action. """
-        if self.client.islogin:
+        if client.user.is_login:
             self.__action_logout(widget)
         else:
             self.__action_login(widget)
@@ -452,7 +456,7 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
             password = dialog.password_entry.get_text().strip()
             if username and password:
                 try:
-                    self.client.login(username, password)
+                    client.user.login(username, password)
                     # setup the username and the password
                     self.settings["username"] = username
                     self.settings["password"] = password
@@ -480,7 +484,7 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
 
         response = dialog.run()
 
-        if response == Gtk.ResponseType.OK and self.client.logout():
+        if response == Gtk.ResponseType.OK and client.user.logout():
             # clean up the username and password
             self.settings["username"] = ""
             self.settings["password"] = ""
@@ -501,12 +505,15 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
         shell = self.object
         entry_view = shell.props.selected_page.get_entry_view()
         entries = entry_view.get_selected_entries()
-        song_ids = [int(entry.get_string(RB.RhythmDBPropType.LOCATION)[6:]) \
-                for entry in entries]
-        song_ids = self.client.add_collect_songs(song_ids)
+        song_ids = client.collect.AddSongs().run({
+            "songId": [entry.get_string(RB.RhythmDBPropType.LOCATION)[6:]
+                for entry in entries],
+            })
         if self.collect_source.activated and song_ids:
-            song_ids = [song_ids] if isinstance(song_ids, int) else song_ids
-            songs = self.client.get_song_info(song_ids)
+            songs = client.common.GetSongInfo().run({
+                "songIds": [song_ids] \
+                        if isinstance(song_ids, int) else song_ids,
+                })
             songs.reverse()
             self.collect_source.add(songs)
 
@@ -517,12 +524,9 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
         if response == Gtk.ResponseType.OK:
             title = dialog.title_entry.get_text().strip()
             if title != "":
-                playlist_id = self.client.add_playlist(title)
+                playlist_id = client.playlist.Add().run({"title": title, })
                 if playlist_id:
-                    self.__set_playlist({
-                        "id": playlist_id,
-                        "title": title
-                        })
+                    self.__set_playlist({"id": playlist_id, "title": title, })
         elif response == Gtk.ResponseType.CANCEL:
             pass
         dialog.destroy()
@@ -538,9 +542,10 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
         if response == Gtk.ResponseType.OK:
             title = dialog.title_entry.get_text().strip()
             if old_title != title:
-                result = self.client.rename_playlist(
-                        shell.props.selected_page.playlist_id, title
-                        )
+                result = client.playlist.Rename().run({
+                    "listId": shell.props.selected_page.playlist_id,
+                    "title": title,
+                    })
                 if result:
                     shell.props.selected_page.set_property("name", title)
         elif response == Gtk.ResponseType.CANCEL:
@@ -558,7 +563,7 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
                 )
         response = dialog.run()
         if response == Gtk.ResponseType.OK:
-            if self.client.delete_playlist(playlist_id):
+            if client.playlist.Delete().run({"listId": playlist_id}):
                 playlist = self.playlists[playlist_id]
                 playlist.delete_thyself()
                 del self.playlists[playlist_id]
@@ -586,10 +591,13 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
         if response == Gtk.ResponseType.OK:
             playlist_id = dialog.playlist_id
             if playlist_id:
-                songs_ids = self.client.add_playlist_songs(
-                        playlist_id, song_ids
-                        )
-                songs = self.client.get_song_info(song_ids)
+                songs_ids = client.playlist.AddSongs().run({
+                    "listId": playlist_id,
+                    "songId": song_ids,
+                    })
+                songs = client.common.GetSongInfo().run({
+                    "songIds": song_ids,
+                    })
                 songs.reverse()
                 self.playlists[playlist_id].add(songs)
         elif response == Gtk.ResponseType.CANCEL:
@@ -608,16 +616,17 @@ class BaiduMusicEntryType(RB.RhythmDBEntryType):
                 name="baidu-music-entry-type",
                 )
         self.settings = Gio.Settings("org.gnome.rhythmbox.plugins.baidu-music")
-        self.client = None
 
     def do_get_playback_uri(self, entry):
         db = self.props.db
         song_id = entry.get_string(RB.RhythmDBPropType.LOCATION)[6:]
         artist = entry.get_string(RB.RhythmDBPropType.ARTIST)
         title = entry.get_string(RB.RhythmDBPropType.TITLE)
-        songinfo = self.client.get_song_links(
-                [song_id], False, self.settings.get_boolean("hq")
-                )
+        songinfo = client.common.GetSongLinks().run({
+            "songId": [song_id],
+            "linkType": False,
+            "isHq": self.settings.get_boolean("hq"),
+            })
         song = songinfo[0]["file_list"][0]
         lyric = songinfo[0]["lyric_url"]
 

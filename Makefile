@@ -9,11 +9,11 @@ clear:
 install: install-po schemas
 	mkdir -p $(PLUGIN_DIR)
 	mkdir -p $(PLUGIN_DATA_DIR)
-	cp -r *.py baidu-music.plugin $(PLUGIN_DIR)
+	cp -r *.py baidu-music.plugin api $(PLUGIN_DIR)
 	cp -r *.ui popup-ui.xml images $(PLUGIN_DATA_DIR)
 install-local: install-po schemas
 	mkdir -p $(PLUGIN_USER_DIR)
-	cp -r *.py *.ui popup-ui.xml baidu-music.plugin images $(PLUGIN_USER_DIR)
+	cp -r *.py *.ui popup-ui.xml baidu-music.plugin images api $(PLUGIN_USER_DIR)
 uninstall:
 	rm -rf $(PLUGIN_DIR)
 	rm -rf $(PLUGIN_DATA_DIR)

@@ -27,6 +27,8 @@ from gi.repository import Gtk
 from gi.repository import GdkPixbuf
 from gi.repository import RB
 
+import api as client
+
 from dialog import AddToPlaylistDialog
 
 _ = gettext.gettext
@@ -40,14 +42,12 @@ HEADPHONE_ICON = "images/headphones.png"
 
 class SearchHandle(object):
 
-    def __init__(self, plugin, builder, client,
-            collect_source, temp_source, playlists):
+    def __init__(self, plugin, builder, collect_source, temp_source, playlists):
 
         # the basic objects
         self.plugin = plugin
         self.collect_source = collect_source
         self.temp_source = temp_source
-        self.client = client
         self.builder = builder
         self.playlists = playlists
 
@@ -84,7 +84,7 @@ class SearchHandle(object):
         else:
             self.page_spinbutton.set_sensitive(True)
 
-        if not self.client.islogin:
+        if not client.user.is_login:
             buttons.extend(["collect", "add"])
 
         buttons = list(set(buttons))
@@ -103,7 +103,11 @@ class SearchHandle(object):
         """ Refresh the liststore of view. """
         pattern = re.compile("</?em>")
 
-        info = self.client.search(self.keyword, self.current_page, PREPAGE)
+        info = client.common.Search().run({
+            "page_size": PREPAGE,
+            "page_no": self.current_page,
+            "query": self.keyword,
+            })
         self.liststore.clear()
         for song in info["song_list"]:
             icon = GdkPixbuf.Pixbuf.new_from_file_at_size(rb.find_plugin_file(
@@ -210,18 +214,23 @@ class SearchHandle(object):
 
     def on_collect(self, widget):
         """ Collect all selected songs. """
-        song_ids = self.client.add_collect_songs(self.song_ids)
+        song_ids = client.collect.AddSongs().run({
+            "songId": self.song_ids,
+            })
         if song_ids:
-            song_ids = [song_ids] if isinstance(song_ids, int) else song_ids
-            songs = self.client.get_song_info(song_ids)
+            songs = client.common.GetSongInfo().run({
+                "songIds": [song_ids] \
+                        if isinstance(song_ids, int) else song_ids,
+                })
             songs.reverse()
             self.collect_source.add(songs)
 
     def on_play(self, widget):
         """ Play all selected songs. """
-        song_ids = [song_id for song_id in self.song_ids \
-                if song_id not in self.temp_source.songs]
-        songs = self.client.get_song_info(song_ids)
+        songs = client.common.GetSongInfo().run({
+            "songIds": [song_id for song_id in self.song_ids \
+                    if song_id not in self.temp_source.songs]
+            })
         if songs:
             self.temp_source.add(songs)
 
@@ -233,8 +242,11 @@ class SearchHandle(object):
         if response == Gtk.ResponseType.OK:
             playlist_id = dialog.playlist_id
             if playlist_id:
-                songs_ids = self.client.add_playlist_songs(playlist_id, song_ids)
-                songs = self.client.get_song_info(song_ids)
+                songs_ids = client.playlist.AddSongs().run({
+                    "listId": playlist_id,
+                    "songId": song_ids,
+                    })
+                songs = client.common.GetSongInfo().run({"songIds": song_ids, })
                 songs.reverse()
                 self.playlists[playlist_id].add(songs)
         elif response == Gtk.ResponseType.CANCEL:
