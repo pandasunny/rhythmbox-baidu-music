@@ -213,6 +213,10 @@ class BaseSource(RB.StaticPlaylistSource):
             for widget_path in widgets:
                 widget = manager.get_widget(toolbar_path + "/" + widget_path)
                 widget.set_sensitive(status)
+            widget = manager.get_widget(
+                    toolbar_path + "/" + "BaiduMusicDownload"
+                    )
+            widget.set_sensitive(entry_view.have_selection())
 
         ev = self.get_entry_view()
         ev.get_column(RB.EntryViewColumn.TRACK_NUMBER).set_visible(False)

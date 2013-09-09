@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+  <!-- interface-requires gtk+ 3.0 -->
+  <object class="GtkListStore" id="liststore">
+    <columns>
+      <!-- column-name id -->
+      <column type="gint"/>
+      <!-- column-name title -->
+      <column type="gchararray"/>
+      <!-- column-name artist -->
+      <column type="gchararray"/>
+      <!-- column-name album -->
+      <column type="gchararray"/>
+      <!-- column-name url -->
+      <column type="gchararray"/>
+      <!-- column-name progress -->
+      <column type="gint"/>
+      <!-- column-name type -->
+      <column type="gint"/>
+      <!-- column-name kbps -->
+      <column type="gint"/>
+      <!-- column-name size -->
+      <column type="gint"/>
+      <!-- column-name hash -->
+      <column type="gchararray"/>
+      <!-- column-name path -->
+      <column type="gchararray"/>
+      <!-- column-name format -->
+      <column type="gchararray"/>
+      <!-- column-name status -->
+      <column type="gchararray"/>
+    </columns>
+  </object>
+  <object class="GtkScrolledWindow" id="scrolledwindow">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="hscrollbar_policy">never</property>
+    <property name="shadow_type">in</property>
+    <child>
+      <object class="GtkTreeView" id="treeview">
+        <property name="visible">True</property>
+        <property name="can_focus">True</property>
+        <property name="model">liststore</property>
+        <property name="headers_clickable">False</property>
+        <property name="search_column">0</property>
+        <property name="hover_expand">True</property>
+        <child internal-child="selection">
+          <object class="GtkTreeSelection" id="treeview-selection">
+            <property name="mode">multiple</property>
+            <signal name="changed" handler="on_tree_selection_changed" swapped="no"/>
+          </object>
+        </child>
+        <child>
+          <object class="GtkTreeViewColumn" id="status_column">
+            <property name="sizing">fixed</property>
+            <property name="min_width">50</property>
+            <property name="title" translatable="yes">Status</property>
+            <child>
+              <object class="GtkCellRendererText" id="cr_status"/>
+              <attributes>
+                <attribute name="text">12</attribute>
+              </attributes>
+            </child>
+          </object>
+        </child>
+        <child>
+          <object class="GtkTreeViewColumn" id="title_column">
+            <property name="sizing">fixed</property>
+            <property name="min_width">150</property>
+            <property name="title" translatable="yes">Title</property>
+            <property name="expand">True</property>
+            <child>
+              <object class="GtkCellRendererText" id="cr_title"/>
+              <attributes>
+                <attribute name="text">1</attribute>
+              </attributes>
+            </child>
+          </object>
+        </child>
+        <child>
+          <object class="GtkTreeViewColumn" id="artist_column">
+            <property name="sizing">fixed</property>
+            <property name="min_width">150</property>
+            <property name="title" translatable="yes">Artist</property>
+            <property name="expand">True</property>
+            <child>
+              <object class="GtkCellRendererText" id="cr_artist"/>
+              <attributes>
+                <attribute name="text">2</attribute>
+              </attributes>
+            </child>
+          </object>
+        </child>
+        <child>
+          <object class="GtkTreeViewColumn" id="album_column">
+            <property name="sizing">fixed</property>
+            <property name="min_width">150</property>
+            <property name="title" translatable="yes">Album</property>
+            <property name="expand">True</property>
+            <child>
+              <object class="GtkCellRendererText" id="cr_album"/>
+              <attributes>
+                <attribute name="text">3</attribute>
+              </attributes>
+            </child>
+          </object>
+        </child>
+        <child>
+          <object class="GtkTreeViewColumn" id="progress_column">
+            <property name="sizing">fixed</property>
+            <property name="min_width">150</property>
+            <property name="title" translatable="yes">Progress</property>
+            <property name="expand">True</property>
+            <child>
+              <object class="GtkCellRendererProgress" id="cr_progress"/>
+              <attributes>
+                <attribute name="value">5</attribute>
+              </attributes>
+            </child>
+          </object>
+        </child>
+      </object>
+    </child>
+  </object>
+  <object class="GtkToolbar" id="toolbar">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="toolbar_style">both</property>
+    <child>
+      <object class="GtkToolButton" id="run_btn">
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+        <property name="tooltip_text" translatable="yes">Start downloading selected items.</property>
+        <property name="label" translatable="yes">Run</property>
+        <property name="use_underline">True</property>
+        <property name="stock_id">gtk-media-play</property>
+        <signal name="clicked" handler="on_run_btn_clicked" swapped="no"/>
+      </object>
+      <packing>
+        <property name="expand">False</property>
+        <property name="homogeneous">True</property>
+      </packing>
+    </child>
+    <child>
+      <object class="GtkToolButton" id="pause_btn">
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+        <property name="tooltip_text" translatable="yes">Pause downloading selected items.</property>
+        <property name="label" translatable="yes">Pause</property>
+        <property name="use_underline">True</property>
+        <property name="stock_id">gtk-media-pause</property>
+        <signal name="clicked" handler="on_pause_btn_clicked" swapped="no"/>
+      </object>
+      <packing>
+        <property name="expand">False</property>
+        <property name="homogeneous">True</property>
+      </packing>
+    </child>
+    <child>
+      <object class="GtkToolButton" id="delete_btn">
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+        <property name="tooltip_text" translatable="yes">Delete the select items.</property>
+        <property name="label" translatable="yes">Delete</property>
+        <property name="use_underline">True</property>
+        <property name="stock_id">gtk-delete</property>
+        <signal name="clicked" handler="on_delete_btn_clicked" swapped="no"/>
+      </object>
+      <packing>
+        <property name="expand">False</property>
+        <property name="homogeneous">True</property>
+      </packing>
+    </child>
+  </object>
+</interface>

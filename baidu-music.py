@@ -31,7 +31,6 @@ from gi.repository import PeasGtk
 from gi.repository import Gtk
 from gi.repository import GdkPixbuf
 
-#from client import Client
 import api as client
 
 from source import PlaylistGroup
@@ -39,11 +38,16 @@ from source import BaseSource
 from source import CollectSource
 from source import OnlinePlaylistSource
 from source import TempSource
-from search import SearchHandle
+
 from dialog import LoginDialog
 from dialog import AddPlaylistDialog
 from dialog import RenamePlaylistDialog
 from dialog import AddToPlaylistDialog
+
+from search import SearchHandle
+
+from download import DownloadDialog
+from download import DownloadSource
 
 import gettext
 
@@ -203,6 +207,19 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
                 pixbuf=icon,
                 )
         shell.append_display_page(playlist_page_group, page_group)
+
+        # create a download source
+        icon = Gtk.IconTheme.get_default().load_icon(
+                "emblem-downloads", width,
+                Gtk.IconLookupFlags.GENERIC_FALLBACK)
+        self.download_source = GObject.new(
+            DownloadSource, shell=shell,
+            name=_("My Download"),
+            plugin=self,
+            pixbuf=icon,
+        )
+        self.download_source.create_ui()
+        shell.append_display_page(self.download_source, page_group)
 
         self.page_group = page_group
         self.playlist_page_group = playlist_page_group
@@ -390,6 +407,16 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
         action.set_gicon(icon)
         action.set_active(self.settings.get_boolean("hq"))
         action.connect("toggled", self.__action_toggle_hq)
+        self.action_group.add_action(action)
+
+        # the action about download songs
+        action = Gtk.Action(
+                name="BaiduMusicDownloadAction",
+                label=_("Download"),
+                tooltip=_("Download songs to the local disk."),
+                stock_id=None
+                )
+        action.connect("activate", self.__action_download)
         self.action_group.add_action(action)
 
         manager.insert_action_group(self.action_group, 0)
@@ -606,6 +633,27 @@ class BaiduMusicPlugin(GObject.Object, Peas.Activatable):
 
     def __action_toggle_hq(self, widget):
         self.settings["hq"] = widget.get_active()
+
+    def __action_download(self, widget):
+        shell = self.object
+        entry_view = shell.props.selected_page.get_entry_view()
+        entries = entry_view.get_selected_entries()
+        song_ids = [int(entry.get_string(RB.RhythmDBPropType.LOCATION)[6:]) \
+                for entry in entries]
+        songs = client.common.GetSongLinks().run({
+            "songId": song_ids,
+            "linkType": True,
+            "isHq": True,
+            })
+
+        dialog = DownloadDialog(song_ids)
+        response = dialog.run()
+        if response == Gtk.ResponseType.OK:
+            songs_list = dialog.get_songs_list()
+            self.download_source.add_items(songs_list)
+        elif response == Gtk.ResponseType.CANCEL:
+            pass
+        dialog.destroy()
 
 
 class BaiduMusicEntryType(RB.RhythmDBEntryType):
